@@ -58,8 +58,8 @@ impl DeploymentState {
 trait Speak {
     type Err;
 
-    fn speak(&self) -> Result<String, Self::Err>;
-    fn shout(&self) -> Result<String, Self::Err> {
+    fn speak(&self) -> Result<String, Self::Err>; // abstract method
+    fn shout(&self) -> Result<String, Self::Err> { // default method
         Ok(self.speak()?.to_uppercase())
     }
 }
@@ -67,7 +67,7 @@ trait Speak {
 impl Speak for User { // impl trait for struct
     type Err = ();
 
-    fn speak(&self) -> Result<String, Self::Err> {
+    fn speak(&self) -> Result<String, Self::Err> { // override default method
         Ok(format!("Hello {}", self.name))
     }
 }
