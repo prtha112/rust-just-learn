@@ -55,6 +55,23 @@ impl DeploymentState {
     }
 }
 
+trait Speak {
+    type Err;
+
+    fn speak(&self) -> Result<String, Self::Err>;
+    fn shout(&self) -> Result<String, Self::Err> {
+        Ok(self.speak()?.to_uppercase())
+    }
+}
+
+impl Speak for User { // impl trait for struct
+    type Err = ();
+
+    fn speak(&self) -> Result<String, Self::Err> {
+        Ok(format!("Hello {}", self.name))
+    }
+}
+
 fn main() {
     let mut s = String::from("hello");
 
@@ -107,6 +124,20 @@ fn main() {
     let dep = DeploymentState::Error("timeout".to_string());
     println!("Can serve: {}", dep.can_serve());
     println!("Message: {}", dep.message());
+
+    let user = User {
+        id: 3,
+        name: String::from("Hanni"),
+        active: true,
+    };
+    match user.speak() {
+        Ok(msg) => println!("{}", msg),
+        Err(e) => println!("speak error: {:?}", e),
+    }
+    match user.shout() {
+        Ok(msg) => println!("{}", msg),
+        Err(_) => println!("error"),
+    }
 }
 
 fn calculate_length(s: &String) -> usize { // immutable borrow
