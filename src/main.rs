@@ -4,6 +4,19 @@ struct User {
     active: bool,
 }
 
+enum JobState {
+    Pending,
+    Running,
+    Failed(String),
+    Success,
+}
+
+enum DeploymentState {
+    Creating,
+    Ready,
+    Error(String),
+}
+
 impl User { // Struct method
     fn new(id: u32, name: String) -> Self { // Associated function (constructor style)
         Self {
@@ -14,6 +27,31 @@ impl User { // Struct method
     }
     fn greet(&self) { // immutable borrow
         println!("Hello {}", self.name);
+    }
+}
+
+impl JobState {
+    fn describe(&self) -> String {
+        match self {
+            JobState::Pending => "Pending".to_string(),
+            JobState::Running => "Running".to_string(),
+            JobState::Failed(err) => format!("Failed: {}", err),
+            JobState::Success => "Success".to_string(),
+        }
+    }
+}
+
+impl DeploymentState {
+    fn can_serve(&self) -> bool {
+        matches!(self, DeploymentState::Ready)
+    }
+
+    fn message(&self) -> String {
+        match self {
+            DeploymentState::Creating => "creating".into(),
+            DeploymentState::Ready => "ready".into(),
+            DeploymentState::Error(e) => format!("error {}", e),
+        }
     }
 }
 
@@ -48,6 +86,27 @@ fn main() {
     let user2 = User::new(2, String::from("Karina"));
     println!("{} is {} years old and active is {}", user2.name, user2.id, user2.active);
     user2.greet();
+
+    let state = JobState::Pending;
+    println!("{}", state.describe());
+    let state = JobState::Running;
+    println!("{}", state.describe());
+    let state = JobState::Failed("timeout".to_string());
+    println!("{}", state.describe());
+    let state = JobState::Success;
+    println!("{}", state.describe());
+
+    let dep = DeploymentState::Creating;
+    println!("Can serve: {}", dep.can_serve());
+    println!("Message: {}", dep.message());
+
+    let dep = DeploymentState::Ready;
+    println!("Can serve: {}", dep.can_serve());
+    println!("Message: {}", dep.message());
+
+    let dep = DeploymentState::Error("timeout".to_string());
+    println!("Can serve: {}", dep.can_serve());
+    println!("Message: {}", dep.message());
 }
 
 fn calculate_length(s: &String) -> usize { // immutable borrow
