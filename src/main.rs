@@ -19,10 +19,10 @@ fn main() {
     println!("{}", r5);
 }
 
-fn calculate_length(s: &String) -> usize {
+fn calculate_length(s: &String) -> usize { // immutable borrow
     s.len()
 }
 
-fn change(s: &mut String) {
+fn change(s: &mut String) { // mutable borrow
     s.push_str(" world 3");
 }
