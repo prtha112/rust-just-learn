@@ -1,0 +1,68 @@
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
+
+use crate::{
+    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp},
+    domain::user::{DomainError, Speak},
+    usecases::user_service::UserService,
+};
+
+#[derive(Clone)]
+pub struct AppState {
+    user_service: UserService,
+}
+
+pub fn router(state: AppState) -> Router {
+    Router::new()
+        .route("/health", get(health))
+        .route("/users", post(create_user))
+        .route("/users/:id", get(get_user))
+        .route("/users/:id/speak", get(user_speak))
+        .with_state(state)
+}
+
+async fn health() -> &'static str {
+    "I'm alive!"
+}
+
+async fn create_user(
+    State(state): State<AppState>,
+    Json(req): Json<CreateUserReq>,
+) -> impl IntoResponse {
+    match state.user_service.create_user(req.name).await {
+        Ok(id) => (StatusCode::CREATED, Json(CreateUserResp { id })).into_response(),
+        Err(e) => map_error(e),
+    }
+}
+
+async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
+    match state.user_service.get_user(id).await {
+        Ok(u) => (StatusCode::OK, Json(u)).into_response(), // User ไม่ได้ derive Serialize ใน domain เพื่อความ clean
+        Err(e) => map_error(e),
+    }
+}
+
+async fn user_speak(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
+    match state.user_service.get_user(id).await {
+        Ok(u) => {
+            let speak = u.speak().map_err(map_error).unwrap_or_else(|r| return r);
+            let shout = u.shout().map_err(map_error).unwrap_or_else(|r| return r);
+            (StatusCode::OK, Json(SpeakResp { speak, shout })).into_response()
+        }
+        Err(e) => map_error(e),
+    }
+}
+
+// ---- error mapping (adapter responsibility) ----
+fn map_error(e: DomainError) -> axum::response::Response {
+    match e {
+        DomainError::Validation(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),
+        DomainError::NotFound => (StatusCode::NOT_FOUND, "not found").into_response(),
+        DomainError::Unexpected(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response(),
+    }
+}

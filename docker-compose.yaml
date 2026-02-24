@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16 # Use a specific, stable version like 'postgres:16'
+    restart: always
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: appdb
+    ports:
+      - "5632:5432" # Map port 5432 on the host to 5432 in the container
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data # Mount a named volume for data persistence
+
+volumes:
+  postgres_data:
