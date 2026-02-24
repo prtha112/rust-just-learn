@@ -7,14 +7,14 @@ use axum::{
 };
 
 use crate::{
-    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp},
+    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp, UserResp},
     domain::user::{DomainError, Speak},
     usecases::user_service::UserService,
 };
 
 #[derive(Clone)]
 pub struct AppState {
-    user_service: UserService,
+    pub user_service: UserService,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -40,18 +40,33 @@ async fn create_user(
     }
 }
 
-async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
+async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.user_service.get_user(id).await {
-        Ok(u) => (StatusCode::OK, Json(u)).into_response(), // User ไม่ได้ derive Serialize ใน domain เพื่อความ clean
+        Ok(u) => {
+            let greet = u.greet();
+            let resp = UserResp {
+                id: u.id,
+                name: u.name,
+                active: u.active,
+                greet,
+            };
+            (StatusCode::OK, Json(resp)).into_response()
+        },
         Err(e) => map_error(e),
     }
 }
 
-async fn user_speak(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
+async fn user_speak(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.user_service.get_user(id).await {
         Ok(u) => {
-            let speak = u.speak().map_err(map_error).unwrap_or_else(|r| return r);
-            let shout = u.shout().map_err(map_error).unwrap_or_else(|r| return r);
+            let speak = match u.speak() {
+                Ok(s) => s,
+                Err(e) => return map_error(e),
+            };
+            let shout = match u.shout() {
+                Ok(s) => s,
+                Err(e) => return map_error(e),
+            };
             (StatusCode::OK, Json(SpeakResp { speak, shout })).into_response()
         }
         Err(e) => map_error(e),

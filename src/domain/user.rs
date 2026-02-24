@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub struct User {
     pub id: i64,
     pub name: String,

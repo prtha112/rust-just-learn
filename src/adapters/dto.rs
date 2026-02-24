@@ -15,3 +15,11 @@ pub struct SpeakResp {
     pub speak: String,
     pub shout: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct UserResp {
+    pub id: i64,
+    pub name: String,
+    pub active: bool,
+    pub greet: String,
+}

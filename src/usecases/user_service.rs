@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use crate::domain::user::{DomainError, User, UserRepository};
 
+#[derive(Clone)]
 pub struct UserService {
     repo: Arc<dyn UserRepository>,
 }
