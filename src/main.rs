@@ -6,7 +6,7 @@ mod usecases;
 use std::sync::Arc;
 
 use adapters::http::{router, AppState};
-use infra::postgres::PostgresUserRepository;
+use infra::user_repository::PostgresUserRepository;
 use usecases::user_service::UserService;
 use sqlx::postgres::PgPoolOptions;
 use dotenvy::dotenv;
