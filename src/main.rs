@@ -16,9 +16,13 @@ use std::env;
 async fn main() {
     dotenv().ok();
     let url_db = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let max_connection = env::var("MAX_CONNECTION")
+        .expect("MAX_CONNECTIONS must be set")
+        .parse::<u32>()
+        .expect("MAX_CONNECTIONS must be a number");
 
     let pool = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(max_connection)
         .connect(&url_db)
         .await
         .expect("Failed to connect to database");
