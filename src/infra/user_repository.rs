@@ -51,4 +51,22 @@ impl UserRepository for PostgresUserRepository {
             active: r.active,
         }))
     }
+
+    async fn get_all(&self) -> Result<Vec<User>, DomainError> {
+        let rows = sqlx::query_as!(User, 
+            r#"
+            SELECT id, name, active
+            FROM users
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+
+        Ok(rows.into_iter().map(|r| User {
+            id: r.id,
+            name: r.name,
+            active: r.active,
+        }).collect())
+    }
 }

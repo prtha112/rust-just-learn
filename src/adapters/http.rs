@@ -21,6 +21,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/users", post(create_user))
+        .route("/users", get(get_all))
         .route("/users/:id", get(get_user))
         .route("/users/:id/speak", get(user_speak))
         .with_state(state)
@@ -33,9 +34,27 @@ async fn health() -> &'static str {
 async fn create_user(
     State(state): State<AppState>,
     Json(req): Json<CreateUserReq>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     match state.user_service.create_user(req.name).await {
         Ok(id) => (StatusCode::CREATED, Json(CreateUserResp { id })).into_response(),
+        Err(e) => map_error(e),
+    }
+}
+
+async fn get_all(State(state): State<AppState>) -> axum::response::Response {
+    match state.user_service.get_all().await {
+        Ok(users) => {
+            let resp: Vec<_> = users.into_iter().map(|u| {
+                let greet = u.greet();
+                UserResp {
+                    id: u.id,
+                    name: u.name,
+                    active: u.active,
+                    greet,
+                }
+            }).collect();
+            (StatusCode::OK, Json(resp)).into_response()
+        },
         Err(e) => map_error(e),
     }
 }

@@ -46,4 +46,5 @@ pub enum DomainError {
 pub trait UserRepository: Send + Sync {
     async fn create(&self, name: String) -> Result<i64, DomainError>;
     async fn get_by_id(&self, id: i64) -> Result<Option<User>, DomainError>;
+    async fn get_all(&self) -> Result<Vec<User>, DomainError>;
 }
