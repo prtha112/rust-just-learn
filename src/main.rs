@@ -5,7 +5,7 @@ mod usecases;
 
 use std::sync::Arc;
 
-use adapters::http::{router, AppState};
+use adapters::restapi::{router, AppState};
 use infra::user_repository::PostgresUserRepository;
 use infra::catagory_repository::PostgresCatagoryRepository;
 use usecases::user_service::UserService;
