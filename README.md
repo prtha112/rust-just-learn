@@ -1,6 +1,16 @@
 # Rust Just Learn
 link : https://google.github.io/comprehensive-rust/running-the-course/course-structure.html
 
+## Ownership
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // s1 is moved to s2
+    println!("{}", s2);
+}
+```
+
 ## Mutable Borrowing
 
 ```rust
@@ -55,6 +65,80 @@ enum Color {
 fn main() {
     let c = Color::Red;
     println!("Color: {}", c);
+}
+```
+
+## Implement Trait
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl Point {
+    fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+}
+
+fn main() {
+    let p = Point::new(1, 2);
+    println!("x: {}, y: {}", p.x, p.y);
+}
+```
+
+## Trait
+
+```rust
+trait Speak {
+    fn speak(&self) -> String;
+}
+
+struct Person {
+    name: String,
+}
+
+impl Speak for Person {
+    fn speak(&self) -> String {
+        format!("Hello, my name is {}", self.name)
+    }
+}
+
+fn main() {
+    let p = Person{ 
+        name: "John".to_string() 
+    };
+    println!("{}", p.speak());
+}
+```
+
+## Trait with default method
+
+```rust
+trait Speak {
+    fn speak(&self) -> String;
+    fn shout(&self) -> String {
+        format!("{}", self.speak().to_uppercase())
+    }
+}
+
+struct Person {
+    name: String,
+}
+
+impl Speak for Person {
+    fn speak(&self) -> String {
+        format!("Hello, my name is {}", self.name)
+    }
+}
+
+fn main() {
+    let p = Person {
+        name: "John".to_string() 
+    };
+    println!("{}", p.speak());
+    println!("{}", p.shout());
 }
 ```
 
