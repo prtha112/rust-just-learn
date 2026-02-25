@@ -18,6 +18,9 @@ impl CatagoryService {
 #[async_trait]
 impl CatagoryRepository for CatagoryService {
     async fn create(&self, name: String) -> Result<i64, DomainError> {
+        if name.trim().is_empty() {
+            return Err(DomainError::Validation("name is required".into()));
+        }
         self.catagory_repository.create(name).await
     }
 
