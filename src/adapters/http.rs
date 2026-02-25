@@ -44,7 +44,7 @@ async fn create_user(
 async fn get_all(State(state): State<AppState>) -> axum::response::Response {
     match state.user_service.get_all().await {
         Ok(users) => {
-            let resp: Vec<_> = users.into_iter().map(|u| {
+            let resp: Vec<UserResp> = users.into_iter().map(|u| {
                 let greet = u.greet();
                 UserResp {
                     id: u.id,
