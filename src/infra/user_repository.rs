@@ -52,7 +52,7 @@ impl UserRepository for PostgresUserRepository {
         }))
     }
 
-    async fn get_all(&self) -> Result<Vec<User>, DomainError> {
+    async fn get_all_users(&self) -> Result<Vec<User>, DomainError> {
         let rows = sqlx::query_as!(User, 
             r#"
             SELECT id, name, active

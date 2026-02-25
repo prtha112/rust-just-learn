@@ -23,8 +23,8 @@ impl UserService {
         user.ok_or(DomainError::NotFound)
     }
 
-    pub async fn get_all(&self) -> Result<Vec<User>, DomainError> {
-        let users = self.repo.get_all().await?;
+    pub async fn get_all_users(&self) -> Result<Vec<User>, DomainError> {
+        let users = self.repo.get_all_users().await?;
         Ok(users)
     }
 }
