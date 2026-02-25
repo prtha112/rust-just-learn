@@ -7,14 +7,17 @@ use axum::{
 };
 
 use crate::{
-    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp, UserResp},
+    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, CreateCatagoryReq, CreateCatagoryResp, CatagoryResp},
+    domain::catagory::CatagoryRepository,
     domain::user::{DomainError, Speak},
     usecases::user_service::UserService,
+    usecases::catagory_service::CatagoryService,
 };
 
 #[derive(Clone)]
 pub struct AppState {
     pub user_service: UserService,
+    pub catagory_service: CatagoryService,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -24,6 +27,9 @@ pub fn router(state: AppState) -> Router {
         .route("/users", get(get_all_users))
         .route("/users/:id", get(get_user))
         .route("/users/:id/speak", get(user_speak))
+        .route("/catagories", post(create_catagory))
+        .route("/catagories", get(get_all_catagories))
+        .route("/catagories/:id", get(get_catagory))
         .with_state(state)
 }
 
@@ -88,6 +94,47 @@ async fn user_speak(State(state): State<AppState>, Path(id): Path<i64>) -> axum:
             };
             (StatusCode::OK, Json(SpeakResp { speak, shout })).into_response()
         }
+        Err(e) => map_error(e),
+    }
+}
+
+async fn create_catagory(
+    State(state): State<AppState>,
+    Json(req): Json<CreateCatagoryReq>,
+) -> axum::response::Response {
+    match state.catagory_service.create(req.name).await {
+        Ok(id) => (StatusCode::CREATED, Json(CreateCatagoryResp { id })).into_response(),
+        Err(e) => map_error(e),
+    }
+}
+
+async fn get_all_catagories(State(state): State<AppState>) -> axum::response::Response {
+    match state.catagory_service.get_all_catagories().await {
+        Ok(catagories) => {
+            let resp: Vec<CatagoryResp> = catagories.into_iter().map(|c| {
+                CatagoryResp {
+                    id: c.id,
+                    name: c.name,
+                    active: c.active,
+                }
+            }).collect();
+            (StatusCode::OK, Json(resp)).into_response()
+        },
+        Err(e) => map_error(e),
+    }
+}
+
+async fn get_catagory(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
+    match state.catagory_service.get_by_id(id).await {
+        Ok(Some(c)) => {
+            let resp = CatagoryResp {
+                id: c.id,
+                name: c.name,
+                active: c.active,
+            };
+            (StatusCode::OK, Json(resp)).into_response()
+        },
+        Ok(None) => (StatusCode::NOT_FOUND, "not found").into_response(),
         Err(e) => map_error(e),
     }
 }

@@ -7,7 +7,9 @@ use std::sync::Arc;
 
 use adapters::http::{router, AppState};
 use infra::user_repository::PostgresUserRepository;
+use infra::catagory_repository::PostgresCatagoryRepository;
 use usecases::user_service::UserService;
+use usecases::catagory_service::CatagoryService;
 use sqlx::postgres::PgPoolOptions;
 use dotenvy::dotenv;
 use std::env;
@@ -31,10 +33,13 @@ async fn main() {
         .await
         .expect("Failed to connect to database");
 
-    let repo = Arc::new(PostgresUserRepository::new(pool));
-    let user_service = UserService::new(repo);
+    let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
+    let user_service = UserService::new(user_repo);
 
-    let state = AppState { user_service };
+    let catagory_repo = Arc::new(PostgresCatagoryRepository::new(pool));
+    let catagory_service = CatagoryService::new(catagory_repo);
+
+    let state = AppState { user_service, catagory_service };
     let app = router(state);
 
     let listener = tokio::net::TcpListener::bind(&address)

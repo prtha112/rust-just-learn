@@ -1,0 +1,51 @@
+use async_trait::async_trait;
+use sqlx::PgPool;
+
+use crate::domain::catagory::{Catagory, CatagoryRepository};
+use crate::domain::user::DomainError;
+
+#[derive(Clone)]
+pub struct PostgresCatagoryRepository {
+    pool: PgPool,
+}
+
+impl PostgresCatagoryRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl CatagoryRepository for PostgresCatagoryRepository {
+    async fn create(&self, name: String) -> Result<i64, DomainError> {
+        let row = sqlx::query!(
+            "INSERT INTO catagories (name) VALUES ($1) RETURNING id",
+            name
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+        Ok(row.id)
+    }
+
+    async fn get_by_id(&self, id: i64) -> Result<Option<Catagory>, DomainError> {
+        let row = sqlx::query!(
+            "SELECT id, name, active FROM catagories WHERE id = $1",
+            id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+        Ok(row.map(|r| Catagory { id: r.id, name: r.name, active: r.active }))
+    }
+
+    async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError> {
+        let rows = sqlx::query!(
+            "SELECT id, name, active FROM catagories"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+        Ok(rows.into_iter().map(|r| Catagory { id: r.id, name: r.name, active: r.active }).collect())
+    }
+}

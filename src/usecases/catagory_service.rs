@@ -1,0 +1,31 @@
+use async_trait::async_trait;
+use std::sync::Arc;
+
+use crate::domain::catagory::{Catagory, CatagoryRepository};
+use crate::domain::user::DomainError;
+
+#[derive(Clone)]
+pub struct CatagoryService {
+    catagory_repository: Arc<dyn CatagoryRepository>,
+}
+
+impl CatagoryService {
+    pub fn new(catagory_repository: Arc<dyn CatagoryRepository>) -> Self {
+        Self { catagory_repository }
+    }
+}
+
+#[async_trait]
+impl CatagoryRepository for CatagoryService {
+    async fn create(&self, name: String) -> Result<i64, DomainError> {
+        self.catagory_repository.create(name).await
+    }
+
+    async fn get_by_id(&self, id: i64) -> Result<Option<Catagory>, DomainError> {
+        self.catagory_repository.get_by_id(id).await
+    }
+
+    async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError> {
+        self.catagory_repository.get_all_catagories().await
+    }
+}

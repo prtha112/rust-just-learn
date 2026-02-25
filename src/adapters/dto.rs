@@ -23,3 +23,20 @@ pub struct UserResp {
     pub active: bool,
     pub greet: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct CreateCatagoryReq {
+    pub name: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreateCatagoryResp {
+    pub id: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CatagoryResp {
+    pub id: i64,
+    pub name: String,
+    pub active: bool,
+}
