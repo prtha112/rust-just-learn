@@ -11,11 +11,14 @@ impl UserService {
         Self { repo }
     }
 
-    pub async fn create_user(&self, name: String) -> Result<i64, DomainError> {
-        if name.trim().is_empty() {
-            return Err(DomainError::Validation("name is required".into()));
+    pub async fn create_user(&self, username: String, password: String) -> Result<i64, DomainError> {
+        if username.trim().is_empty() {
+            return Err(DomainError::Validation("username is required".into()));
         }
-        self.repo.create(name).await
+        if password.trim().is_empty() {
+            return Err(DomainError::Validation("password is required".into()));
+        }
+        self.repo.create(username, password).await
     }
 
     pub async fn get_user(&self, id: i64) -> Result<User, DomainError> {

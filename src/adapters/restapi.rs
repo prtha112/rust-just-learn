@@ -42,7 +42,7 @@ async fn create_user(
     State(state): State<AppState>,
     Json(req): Json<CreateUserReq>,
 ) -> axum::response::Response {
-    match state.user_service.create_user(req.name).await {
+    match state.user_service.create_user(req.username, req.password).await {
         Ok(id) => (StatusCode::CREATED, Json(CreateUserResp { id })).into_response(),
         Err(e) => map_error(e),
     }
@@ -55,7 +55,8 @@ async fn get_all_users(State(state): State<AppState>) -> axum::response::Respons
                 let greet = u.greet();
                 UserResp {
                     id: u.id,
-                    name: u.name,
+                    username: u.username,
+                    password: u.password,
                     active: u.active,
                     greet,
                 }
@@ -72,7 +73,8 @@ async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> axum::r
             let greet = u.greet();
             let resp = UserResp {
                 id: u.id,
-                name: u.name,
+                username: u.username,
+                password: u.password,
                 active: u.active,
                 greet,
             };

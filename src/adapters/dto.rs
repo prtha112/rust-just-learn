@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateUserReq {
-    pub name: String,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -19,7 +20,8 @@ pub struct SpeakResp {
 #[derive(Debug, Serialize)]
 pub struct UserResp {
     pub id: i64,
-    pub name: String,
+    pub username: String,
+    pub password: String,
     pub active: bool,
     pub greet: String,
 }

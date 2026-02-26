@@ -4,13 +4,14 @@ use thiserror::Error;
 #[derive(Debug)]
 pub struct User {
     pub id: i64,
-    pub name: String,
+    pub username: String,
+    pub password: String,
     pub active: bool,
 }
 
 impl User {
     pub fn greet(&self) -> String {
-        format!("Hello {}", self.name)
+        format!("Hello {}", self.username)
     }
 }
 
@@ -28,7 +29,7 @@ impl Speak for User {
     type Err = DomainError;
 
     fn speak(&self) -> Result<String, Self::Err> {
-        Ok(format!("Hello {}", self.name))
+        Ok(format!("Hello {}", self.username))
     }
 }
 
@@ -44,7 +45,7 @@ pub enum DomainError {
 
 #[async_trait]
 pub trait UserRepository: Send + Sync {
-    async fn create(&self, name: String) -> Result<i64, DomainError>;
+    async fn create(&self, username: String, password: String) -> Result<i64, DomainError>;
     async fn get_by_id(&self, id: i64) -> Result<Option<User>, DomainError>;
     async fn get_all_users(&self) -> Result<Vec<User>, DomainError>;
 }

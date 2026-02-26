@@ -12,18 +12,27 @@ impl PostgresUserRepository {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
+
+    fn mask_password(password: String) -> String {
+        let mut masked_password = String::new();
+        for _ in 0..password.len() {
+            masked_password.push('*');
+        }
+        masked_password
+    }
 }
 
 #[async_trait]
 impl UserRepository for PostgresUserRepository {
-    async fn create(&self, name: String) -> Result<i64, DomainError> {
+    async fn create(&self, username: String, password: String) -> Result<i64, DomainError> {
         let row = sqlx::query!(
             r#"
-            INSERT INTO users (name, active)
-            VALUES ($1, TRUE)
+            INSERT INTO users (username, password, active)
+            VALUES ($1, $2, TRUE)
             RETURNING id
             "#,
-            name
+            username,
+            password
         )
         .fetch_one(&self.pool)
         .await
@@ -35,7 +44,7 @@ impl UserRepository for PostgresUserRepository {
     async fn get_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
         let row = sqlx::query_as!(User, 
             r#"
-            SELECT id, name, active
+            SELECT id, username, password, active
             FROM users
             WHERE id = $1
             "#,
@@ -47,7 +56,8 @@ impl UserRepository for PostgresUserRepository {
 
         Ok(row.map(|r| User {
             id: r.id,
-            name: r.name,
+            username: r.username,
+            password: Self::mask_password(r.password),
             active: r.active,
         }))
     }
@@ -55,7 +65,7 @@ impl UserRepository for PostgresUserRepository {
     async fn get_all_users(&self) -> Result<Vec<User>, DomainError> {
         let rows = sqlx::query_as!(User, 
             r#"
-            SELECT id, name, active
+            SELECT id, username, password, active
             FROM users
             "#
         )
@@ -65,8 +75,10 @@ impl UserRepository for PostgresUserRepository {
 
         Ok(rows.into_iter().map(|r| User {
             id: r.id,
-            name: r.name,
+            username: r.username,
+            password: Self::mask_password(r.password),
             active: r.active,
         }).collect())
     }
+
 }

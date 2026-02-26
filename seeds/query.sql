@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id      BIGSERIAL PRIMARY KEY,
-  name    TEXT NOT NULL,
+  username    TEXT NOT NULL,
+  password    TEXT NOT NULL,
   active  BOOLEAN NOT NULL DEFAULT TRUE
 );
 
