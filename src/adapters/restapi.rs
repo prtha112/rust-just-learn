@@ -7,7 +7,8 @@ use axum::{
 };
 
 use crate::{
-    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, CreateCatagoryReq, CreateCatagoryResp, CatagoryResp, UpdateCatagoryReq},
+    adapters::dto_user::{CreateUserReq, CreateUserResp, SpeakResp, UserResp},
+    adapters::dto_catagory::{CreateCatagoryReq, CreateCatagoryResp, CatagoryResp, UpdateCatagoryReq},
     domain::catagory::CatagoryRepository,
     domain::user::{DomainError, Speak},
     usecases::user_service::UserService,
