@@ -48,4 +48,16 @@ impl CatagoryRepository for PostgresCatagoryRepository {
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
         Ok(rows.into_iter().map(|r| Catagory { id: r.id, name: r.name, active: r.active }).collect())
     }
+
+    async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError> {
+        let row = sqlx::query!(
+            "UPDATE catagories SET name = $1 WHERE id = $2 RETURNING id, name, active",
+            name,
+            id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+        Ok(Catagory { id: row.id, name: row.name, active: row.active })
+    }
 }

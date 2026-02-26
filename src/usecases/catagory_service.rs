@@ -31,4 +31,8 @@ impl CatagoryRepository for CatagoryService {
     async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError> {
         self.catagory_repository.get_all_catagories().await
     }
+
+    async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError> {
+        self.catagory_repository.update(id, name).await
+    }
 }

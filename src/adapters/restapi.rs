@@ -2,12 +2,12 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 
 use crate::{
-    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, CreateCatagoryReq, CreateCatagoryResp, CatagoryResp},
+    adapters::dto::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, CreateCatagoryReq, CreateCatagoryResp, CatagoryResp, UpdateCatagoryReq},
     domain::catagory::CatagoryRepository,
     domain::user::{DomainError, Speak},
     usecases::user_service::UserService,
@@ -28,6 +28,7 @@ pub fn router(state: AppState) -> Router {
         .route("/users/:id", get(get_user))
         .route("/users/:id/speak", get(user_speak))
         .route("/catagories", post(create_catagory))
+        .route("/catagories/:id", put(update_catagory))
         .route("/catagories", get(get_all_catagories))
         .route("/catagories/:id", get(get_catagory))
         .with_state(state)
@@ -135,6 +136,24 @@ async fn get_catagory(State(state): State<AppState>, Path(id): Path<i64>) -> axu
             (StatusCode::OK, Json(resp)).into_response()
         },
         Ok(None) => (StatusCode::NOT_FOUND, "not found").into_response(),
+        Err(e) => map_error(e),
+    }
+}
+
+async fn update_catagory(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Json(req): Json<UpdateCatagoryReq>,
+) -> axum::response::Response {
+    match state.catagory_service.update(id, req.name).await {
+        Ok(c) => {
+            let resp = CatagoryResp {
+                id: c.id,
+                name: c.name,
+                active: c.active,
+            };
+            (StatusCode::OK, Json(resp)).into_response()
+        },
         Err(e) => map_error(e),
     }
 }

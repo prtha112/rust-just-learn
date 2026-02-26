@@ -40,3 +40,8 @@ pub struct CatagoryResp {
     pub name: String,
     pub active: bool,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct UpdateCatagoryReq {
+    pub name: String,
+}
