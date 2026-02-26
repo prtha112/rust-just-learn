@@ -1,6 +1,12 @@
 # Rust Just Learn
 link : https://google.github.io/comprehensive-rust/running-the-course/course-structure.html
 
+## Seed database
+
+```bash
+docker exec -it rust-just-learn-db-1 psql -U app -d appdb -f /seeds/query.sql
+```
+
 ## Ownership
 
 ```rust
