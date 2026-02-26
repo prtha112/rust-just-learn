@@ -19,7 +19,11 @@ impl PostgresCatagoryRepository {
 impl CatagoryRepository for PostgresCatagoryRepository {
     async fn create(&self, name: String) -> Result<i64, DomainError> {
         let row = sqlx::query!(
-            "INSERT INTO catagories (name) VALUES ($1) RETURNING id",
+            r#"
+            INSERT INTO catagories (name) 
+            VALUES ($1) 
+            RETURNING id
+            "#,
             name
         )
         .fetch_one(&self.pool)
@@ -30,7 +34,11 @@ impl CatagoryRepository for PostgresCatagoryRepository {
 
     async fn get_by_id(&self, id: i64) -> Result<Option<Catagory>, DomainError> {
         let row = sqlx::query!(
-            "SELECT id, name, active FROM catagories WHERE id = $1",
+            r#"
+            SELECT id, name, active 
+            FROM catagories 
+            WHERE id = $1
+            "#,
             id
         )
         .fetch_optional(&self.pool)
@@ -41,7 +49,10 @@ impl CatagoryRepository for PostgresCatagoryRepository {
 
     async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError> {
         let rows = sqlx::query!(
-            "SELECT id, name, active FROM catagories"
+            r#"
+            SELECT id, name, active 
+            FROM catagories
+            "#
         )
         .fetch_all(&self.pool)
         .await
@@ -51,7 +62,12 @@ impl CatagoryRepository for PostgresCatagoryRepository {
 
     async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError> {
         let row = sqlx::query!(
-            "UPDATE catagories SET name = $1 WHERE id = $2 RETURNING id, name, active",
+            r#"
+            UPDATE catagories 
+            SET name = $1 
+            WHERE id = $2 
+            RETURNING id, name, active
+            "#,
             name,
             id
         )
