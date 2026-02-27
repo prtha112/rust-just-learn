@@ -18,7 +18,7 @@ impl PostgresCatagoryRepository {
 
 #[async_trait]
 impl CatagoryRepository for PostgresCatagoryRepository {
-    #[instrument(skip(self), fields(db = "postgres"))]
+    #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn create(&self, name: String) -> Result<i64, DomainError> {
         let row = sqlx::query!(
             r#"
@@ -34,7 +34,7 @@ impl CatagoryRepository for PostgresCatagoryRepository {
         Ok(row.id)
     }
 
-    #[instrument(skip(self), fields(db = "postgres"))]
+    #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn get_by_id(&self, id: i64) -> Result<Option<Catagory>, DomainError> {
         let row = sqlx::query!(
             r#"
@@ -50,7 +50,7 @@ impl CatagoryRepository for PostgresCatagoryRepository {
         Ok(row.map(|r| Catagory { id: r.id, name: r.name, active: r.active }))
     }
 
-    #[instrument(skip(self), fields(db = "postgres"))]
+    #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError> {
         let rows = sqlx::query!(
             r#"
@@ -64,7 +64,7 @@ impl CatagoryRepository for PostgresCatagoryRepository {
         Ok(rows.into_iter().map(|r| Catagory { id: r.id, name: r.name, active: r.active }).collect())
     }
 
-    #[instrument(skip(self), fields(db = "postgres"))]
+    #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError> {
         let row = sqlx::query!(
             r#"
