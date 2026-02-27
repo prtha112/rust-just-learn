@@ -1,15 +1,21 @@
 //! HTTP tracing & metrics middleware for Axum.
-//! Lives in `infra` because it's infrastructure-level instrumentation,
-//! not business logic.
+//! Metric names follow OTel Semantic Conventions:
+//! https://opentelemetry.io/docs/specs/semconv/http/http-metrics/
 
 use opentelemetry::{global, trace::Status as OtelStatus, KeyValue};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 // ---- Span status + auto metrics -----------------------------------------
 
-/// Sets the OTel span status from HTTP response status, and records metrics:
-/// - `http_requests_total` (counter)
-/// - `http_request_duration_ms` (histogram)
+/// Sets OTel span status and records standard HTTP server metrics.
+///
+/// Metrics emitted (per OTel Semantic Conventions):
+/// - `http.server.request.duration` (histogram, seconds)
+/// - `http.server.error.duration`   (histogram, seconds — 5xx only)
+///
+/// Attributes:
+/// - `http.response.status_code`
+/// - `http.request.method`  (if accessible via span)
 #[derive(Clone)]
 pub struct OtelOnResponse;
 
@@ -21,69 +27,65 @@ impl<B> tower_http::trace::OnResponse<B> for OtelOnResponse {
         span: &tracing::Span,
     ) {
         let http_status = response.status();
-        let status_str = http_status.as_u16().to_string();
-        let latency_ms = latency.as_millis() as f64;
+        let status_code = http_status.as_u16();
+        // OTel standard: duration in SECONDS (not milliseconds)
+        let duration_secs = latency.as_secs_f64();
 
         // --- OTel span status ---
         if http_status.is_server_error() {
-            span.set_status(OtelStatus::error(format!("HTTP {}", http_status.as_u16())));
+            span.set_status(OtelStatus::error(format!("HTTP {}", status_code)));
         } else {
             span.set_status(OtelStatus::Ok);
         }
 
-        // --- metrics  (auto for every request) ---
+        // --- OTel standard attributes ---
+        let attrs = &[KeyValue::new("http.response.status_code", status_code as i64)];
         let meter = global::meter("rust-just-learn");
-        let attrs = &[KeyValue::new("http.status_code", status_str.clone())];
 
+        // http.server.request.duration — REQUIRED by OTel spec
         meter
-            .u64_counter("http_requests_total")
-            .with_description("Total HTTP requests")
+            .f64_histogram("http.server.request.duration")
+            .with_description("Duration of HTTP server requests")
+            .with_unit("s")
             .build()
-            .add(1, attrs);
+            .record(duration_secs, attrs);
 
-        meter
-            .f64_histogram("http_request_duration_ms")
-            .with_description("HTTP request latency in milliseconds")
-            .with_unit("ms")
-            .build()
-            .record(latency_ms, attrs);
-
-        // Separate histogram — error requests only (5xx)
+        // http.server.error.duration — 5xx only (custom extension)
         if http_status.is_server_error() {
             meter
-                .f64_histogram("http_error_duration_ms")
-                .with_description("Latency of HTTP 5xx error requests")
-                .with_unit("ms")
+                .f64_histogram("http.server.error.duration")
+                .with_description("Duration of HTTP 5xx server error requests")
+                .with_unit("s")
                 .build()
-                .record(latency_ms, attrs);
+                .record(duration_secs, attrs);
         }
 
+        // --- log event inside span ---
         tracing::info!(
-            http.status_code = http_status.as_u16(),
-            latency_ms = latency_ms,
+            "http.response.status_code" = status_code,
+            latency_ms = latency.as_millis(),
             "HTTP {} in {}ms",
-            http_status.as_u16(),
-            latency_ms as u64,
+            status_code,
+            latency.as_millis(),
         );
     }
 }
 
 // ---- Metrics helpers -------------------------------------------------------
 
-/// Manually increment `http_requests_total` with route + method labels,
-/// call this inside handlers if you need finer-grained route tagging.
-pub fn record_http_request(route: &str, method: &str, status: u16) {
+/// Manually record a request with full OTel-standard attributes.
+/// Use when you need finer-grained `http.route` labeling per handler.
+pub fn record_http_request(method: &str, route: &str, status: u16, duration_secs: f64) {
     let meter = global::meter("rust-just-learn");
+    let attrs = &[
+        KeyValue::new("http.request.method", method.to_string()),
+        KeyValue::new("http.route", route.to_string()),
+        KeyValue::new("http.response.status_code", status as i64),
+    ];
     meter
-        .u64_counter("http_requests_total")
-        .with_description("Total HTTP requests")
+        .f64_histogram("http.server.request.duration")
+        .with_description("Duration of HTTP server requests")
+        .with_unit("s")
         .build()
-        .add(
-            1,
-            &[
-                KeyValue::new("route", route.to_string()),
-                KeyValue::new("method", method.to_string()),
-                KeyValue::new("http.status_code", status.to_string()),
-            ],
-        );
+        .record(duration_secs, attrs);
 }

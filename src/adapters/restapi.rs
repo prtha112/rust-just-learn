@@ -46,7 +46,7 @@ pub fn router(state: AppState) -> Router {
 }
 
 async fn health() -> &'static str {
-    record_http_request("/health", "GET", 200);
+    record_http_request("GET", "/health", 200, 0.0);
     "I'm alive!"
 }
 
