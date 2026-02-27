@@ -58,16 +58,24 @@ impl<B> tower_http::trace::OnResponse<B> for OtelOnResponse {
                 .with_unit("s")
                 .build()
                 .record(duration_secs, attrs);
+            // --- log event inside span ---
+            tracing::error!(
+                "http.response.status_code" = status_code,
+                latency_ms = latency.as_millis(),
+                "HTTP {} in {}ms",
+                status_code,
+                latency.as_millis(),
+            );
+        } else {
+            // --- log event inside span ---
+            tracing::info!(
+                "http.response.status_code" = status_code,
+                latency_ms = latency.as_millis(),
+                "HTTP {} in {}ms",
+                status_code,
+                latency.as_millis(),
+            );
         }
-
-        // --- log event inside span ---
-        tracing::info!(
-            "http.response.status_code" = status_code,
-            latency_ms = latency.as_millis(),
-            "HTTP {} in {}ms",
-            status_code,
-            latency.as_millis(),
-        );
     }
 }
 
