@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 axum = "0.7"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
@@ -14,3 +14,14 @@ sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macro
 thiserror = "1"
 async-trait = "0.1"
 dotenvy = "0.15.7"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tracing-opentelemetry = "0.32.1"
+opentelemetry = "0.31.0"
+opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.31.0", features = ["grpc-tonic"] }
+opentelemetry-semantic-conventions = "0.31.0"
+tower-http = { version = "0.6.8", features = ["trace"] }
+opentelemetry-appender-tracing = "0.31.1"
+tracing-appender = "0.2.4"
+tonic = "0.14.5"

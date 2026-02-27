@@ -5,12 +5,14 @@ use axum::{
     routing::{get, post, put},
     Json, Router,
 };
+use tower_http::trace::TraceLayer;
 
 use crate::{
     adapters::dto_user::{CreateUserReq, CreateUserResp, SpeakResp, UserResp},
     adapters::dto_catagory::{CreateCatagoryReq, CreateCatagoryResp, CatagoryResp, UpdateCatagoryReq},
     domain::catagory::CatagoryRepository,
     domain::user::{DomainError, Speak},
+    infra::http_trace::{OtelOnResponse, record_http_request},
     usecases::user_service::UserService,
     usecases::catagory_service::CatagoryService,
 };
@@ -33,9 +35,18 @@ pub fn router(state: AppState) -> Router {
         .route("/catagories", get(get_all_catagories))
         .route("/catagories/:id", get(get_catagory))
         .with_state(state)
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(
+                    tower_http::trace::DefaultMakeSpan::new()
+                        .level(tracing::Level::INFO),
+                )
+                .on_response(OtelOnResponse),
+        )
 }
 
 async fn health() -> &'static str {
+    record_http_request("/health", "GET", 200);
     "I'm alive!"
 }
 
@@ -43,45 +54,47 @@ async fn create_user(
     State(state): State<AppState>,
     Json(req): Json<CreateUserReq>,
 ) -> axum::response::Response {
-    match state.user_service.create_user(req.username, req.password).await {
-        Ok(id) => (StatusCode::CREATED, Json(CreateUserResp { id })).into_response(),
-        Err(e) => map_error(e),
+    match state.user_service.create_user(req.username.clone(), req.password).await {
+        Ok(id) => {
+            tracing::info!(user_id = id, username = %req.username, "user created");
+            (StatusCode::CREATED, Json(CreateUserResp { id })).into_response()
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "create_user failed");
+            map_error(e)
+        }
     }
 }
 
 async fn get_all_users(State(state): State<AppState>) -> axum::response::Response {
     match state.user_service.get_all_users().await {
         Ok(users) => {
+            tracing::info!(count = users.len(), "fetched users");
             let resp: Vec<UserResp> = users.into_iter().map(|u| {
                 let greet = u.greet();
-                UserResp {
-                    id: u.id,
-                    username: u.username,
-                    password: u.password,
-                    active: u.active,
-                    greet,
-                }
+                UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet }
             }).collect();
             (StatusCode::OK, Json(resp)).into_response()
         },
-        Err(e) => map_error(e),
+        Err(e) => {
+            tracing::warn!(error = %e, "get_all_users failed");
+            map_error(e)
+        }
     }
 }
 
 async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.user_service.get_user(id).await {
         Ok(u) => {
+            tracing::info!(user_id = u.id, username = %u.username, active = u.active, "fetched user");
             let greet = u.greet();
-            let resp = UserResp {
-                id: u.id,
-                username: u.username,
-                password: u.password,
-                active: u.active,
-                greet,
-            };
+            let resp = UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet };
             (StatusCode::OK, Json(resp)).into_response()
         },
-        Err(e) => map_error(e),
+        Err(e) => {
+            tracing::warn!(user_id = id, error = %e, "get_user failed");
+            map_error(e)
+        }
     }
 }
 
@@ -106,40 +119,49 @@ async fn create_catagory(
     State(state): State<AppState>,
     Json(req): Json<CreateCatagoryReq>,
 ) -> axum::response::Response {
-    match state.catagory_service.create(req.name).await {
-        Ok(id) => (StatusCode::CREATED, Json(CreateCatagoryResp { id })).into_response(),
-        Err(e) => map_error(e),
+    match state.catagory_service.create(req.name.clone()).await {
+        Ok(id) => {
+            tracing::info!(catagory_id = id, name = %req.name, "catagory created");
+            (StatusCode::CREATED, Json(CreateCatagoryResp { id })).into_response()
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "create_catagory failed");
+            map_error(e)
+        }
     }
 }
 
 async fn get_all_catagories(State(state): State<AppState>) -> axum::response::Response {
     match state.catagory_service.get_all_catagories().await {
         Ok(catagories) => {
+            tracing::info!(count = catagories.len(), "fetched catagories");
             let resp: Vec<CatagoryResp> = catagories.into_iter().map(|c| {
-                CatagoryResp {
-                    id: c.id,
-                    name: c.name,
-                    active: c.active,
-                }
+                CatagoryResp { id: c.id, name: c.name, active: c.active }
             }).collect();
             (StatusCode::OK, Json(resp)).into_response()
         },
-        Err(e) => map_error(e),
+        Err(e) => {
+            tracing::warn!(error = %e, "get_all_catagories failed");
+            map_error(e)
+        }
     }
 }
 
 async fn get_catagory(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.catagory_service.get_by_id(id).await {
         Ok(Some(c)) => {
-            let resp = CatagoryResp {
-                id: c.id,
-                name: c.name,
-                active: c.active,
-            };
+            tracing::info!(catagory_id = c.id, name = %c.name, active = c.active, "fetched catagory");
+            let resp = CatagoryResp { id: c.id, name: c.name, active: c.active };
             (StatusCode::OK, Json(resp)).into_response()
         },
-        Ok(None) => (StatusCode::NOT_FOUND, "not found").into_response(),
-        Err(e) => map_error(e),
+        Ok(None) => {
+            tracing::warn!(catagory_id = id, "catagory not found");
+            (StatusCode::NOT_FOUND, "not found").into_response()
+        }
+        Err(e) => {
+            tracing::warn!(catagory_id = id, error = %e, "get_catagory failed");
+            map_error(e)
+        }
     }
 }
 

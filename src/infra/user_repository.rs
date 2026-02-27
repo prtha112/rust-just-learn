@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use sqlx::PgPool;
+use tracing::instrument;
 
 use crate::domain::user::{DomainError, User, UserRepository};
 
@@ -24,6 +25,7 @@ impl PostgresUserRepository {
 
 #[async_trait]
 impl UserRepository for PostgresUserRepository {
+    #[instrument(skip(self), fields(db = "postgres"))]
     async fn create(&self, username: String, password: String) -> Result<i64, DomainError> {
         let row = sqlx::query!(
             r#"
@@ -41,6 +43,7 @@ impl UserRepository for PostgresUserRepository {
         Ok(row.id)
     }
 
+    #[instrument(skip(self), fields(db = "postgres"))]
     async fn get_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
         let row = sqlx::query_as!(User, 
             r#"
@@ -62,6 +65,7 @@ impl UserRepository for PostgresUserRepository {
         }))
     }
 
+    #[instrument(skip(self), fields(db = "postgres"))]
     async fn get_all_users(&self) -> Result<Vec<User>, DomainError> {
         let rows = sqlx::query_as!(User, 
             r#"

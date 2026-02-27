@@ -17,6 +17,13 @@ use std::env;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
+    // Initialize OpenTelemetry — keep providers alive until shutdown
+    let otel = infra::telemetry::init_telemetry()
+        .expect("Failed to initialize OpenTelemetry");
+
+    tracing::info!("OpenTelemetry initialized");
+
     let url_db = env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set");
     let max_connection = env::var("MAX_CONNECTION")
@@ -45,8 +52,20 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(&address)
         .await
         .unwrap();
-    println!("Listening on http://{}", address);
-    axum::serve(listener, app)
-        .await
-        .unwrap();
+    tracing::info!("Listening on http://{}", address);
+
+    // Run server until Ctrl+C, then gracefully flush OTel before exit
+    tokio::select! {
+        result = axum::serve(listener, app) => {
+            if let Err(e) = result {
+                tracing::error!("Server error: {e}");
+            }
+        }
+        _ = tokio::signal::ctrl_c() => {
+            tracing::info!("Shutting down — flushing telemetry...");
+        }
+    }
+
+    // Flush and shutdown OTel providers BEFORE process exits
+    otel.shutdown();
 }
