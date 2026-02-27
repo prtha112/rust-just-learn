@@ -48,11 +48,22 @@ impl<B> tower_http::trace::OnResponse<B> for OtelOnResponse {
             .build()
             .record(latency_ms, attrs);
 
-        // --- log event (shows up inside the span in HyperDX) ---
+        // Separate histogram — error requests only (5xx)
+        if http_status.is_server_error() {
+            meter
+                .f64_histogram("http_error_duration_ms")
+                .with_description("Latency of HTTP 5xx error requests")
+                .with_unit("ms")
+                .build()
+                .record(latency_ms, attrs);
+        }
+
         tracing::info!(
-            status = http_status.as_u16(),
+            http.status_code = http_status.as_u16(),
             latency_ms = latency_ms,
-            "response"
+            "HTTP {} in {}ms",
+            http_status.as_u16(),
+            latency_ms as u64,
         );
     }
 }
