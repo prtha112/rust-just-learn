@@ -8,8 +8,10 @@ pub trait CatagoryRepository: Send + Sync {
     async fn get_by_id(&self, id: i64) -> Result<Option<Catagory>, DomainError>;
     async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError>;
     async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError>;
+    async fn delete(&self, id: i64) -> Result<(), DomainError>;
 }
 
+#[derive(Debug)]
 pub struct Catagory {
     pub id: i64,
     pub name: String,

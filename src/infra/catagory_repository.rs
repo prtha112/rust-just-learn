@@ -81,4 +81,19 @@ impl CatagoryRepository for PostgresCatagoryRepository {
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
         Ok(Catagory { id: row.id, name: row.name, active: row.active })
     }
+
+    #[instrument(skip(self), err, fields(db = "postgres"))]
+    async fn delete(&self, id: i64) -> Result<(), DomainError> {
+        let _row = sqlx::query!(
+            r#"
+            DELETE FROM catagories
+            WHERE id = $1
+            "#,
+            id
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+        Ok(())
+    }
 }

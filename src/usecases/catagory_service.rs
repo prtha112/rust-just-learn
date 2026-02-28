@@ -35,4 +35,12 @@ impl CatagoryRepository for CatagoryService {
     async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError> {
         self.catagory_repository.update(id, name).await
     }
+
+    async fn delete(&self, id: i64) -> Result<(), DomainError> {
+        let catagory = self.catagory_repository.get_by_id(id).await?;
+        if catagory.is_none() {
+            return Err(DomainError::NotFound);
+        }
+        self.catagory_repository.delete(id).await
+    }
 }

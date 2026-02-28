@@ -36,6 +36,7 @@ pub fn router(state: AppState) -> Router {
         .route("/catagories/:id", put(update_catagory))
         .route("/catagories", get(get_all_catagories))
         .route("/catagories/:id", get(get_catagory))
+        .route("/catagories/:id", delete(delete_catagory))
         .with_state(state)
         .layer(
             TraceLayer::new_for_http()
@@ -161,10 +162,19 @@ async fn create_catagory(
 async fn get_all_catagories(State(state): State<AppState>) -> axum::response::Response {
     match state.catagory_service.get_all_catagories().await {
         Ok(catagories) => {
-            tracing::info!(count = catagories.len(), "fetched catagories");
-            let resp: Vec<CatagoryResp> = catagories.into_iter().map(|c| {
-                CatagoryResp { id: c.id, name: c.name, active: c.active }
-            }).collect();
+            tracing::info!(
+                count = catagories.len(),
+                "fetched catagories: {:#?}",
+                &catagories[..catagories.len().min(5)]
+            );
+            let resp: Vec<CatagoryResp> = catagories
+                .into_iter()
+                .map(|c| CatagoryResp {
+                    id: c.id,
+                    name: c.name,
+                    active: c.active,
+                })
+                .collect();
             (StatusCode::OK, Json(resp)).into_response()
         },
         Err(e) => {
@@ -204,6 +214,19 @@ async fn update_catagory(
             };
             (StatusCode::OK, Json(resp)).into_response()
         },
+        Err(e) => map_error(e),
+    }
+}
+
+async fn delete_catagory(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> axum::response::Response {
+    match state.catagory_service.delete(id).await {
+        Ok(_) => {
+            tracing::info!(catagory_id = id, "deleted catagory id = {:#?}", id);
+            (StatusCode::OK, Json(id)).into_response()
+        }
         Err(e) => map_error(e),
     }
 }
