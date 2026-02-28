@@ -54,6 +54,7 @@ impl UserRepository for PostgresUserRepository {
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
 
+        // Single row, mask password if exists
         Ok(row.map(|r| User {
             id: r.id,
             username: r.username,
@@ -74,6 +75,7 @@ impl UserRepository for PostgresUserRepository {
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
 
+        // Multiple rows, mask passwords before returning
         Ok(rows.into_iter().map(|r| User {
             id: r.id,
             username: r.username,

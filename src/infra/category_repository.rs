@@ -101,7 +101,7 @@ impl CategoryRepository for PostgresCategoryRepository {
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
-    
+
         Ok(())
     }
 }
