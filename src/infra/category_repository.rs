@@ -2,28 +2,28 @@ use async_trait::async_trait;
 use sqlx::PgPool;
 use tracing::instrument;
 
-use crate::domain::catagory::{Catagory, CatagoryRepository};
+use crate::domain::category::{Category, CategoryRepository};
 use crate::domain::DomainError;
 
 #[derive(Clone)]
-pub struct PostgresCatagoryRepository {
+pub struct PostgresCategoryRepository {
     pool: PgPool,
 }
 
-impl PostgresCatagoryRepository {
+impl PostgresCategoryRepository {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }
 
 #[async_trait]
-impl CatagoryRepository for PostgresCatagoryRepository {
+impl CategoryRepository for PostgresCategoryRepository {
     #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn create(&self, name: String) -> Result<i64, DomainError> {
         let row = sqlx::query!(
             r#"
-            INSERT INTO catagories (name) 
-            VALUES ($1) 
+            INSERT INTO catagories (name)
+            VALUES ($1)
             RETURNING id
             "#,
             name
@@ -35,11 +35,11 @@ impl CatagoryRepository for PostgresCatagoryRepository {
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
-    async fn get_by_id(&self, id: i64) -> Result<Option<Catagory>, DomainError> {
+    async fn get_by_id(&self, id: i64) -> Result<Option<Category>, DomainError> {
         let row = sqlx::query!(
             r#"
-            SELECT id, name, active 
-            FROM catagories 
+            SELECT id, name, active
+            FROM catagories
             WHERE id = $1
             "#,
             id
@@ -47,30 +47,30 @@ impl CatagoryRepository for PostgresCatagoryRepository {
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
-        Ok(row.map(|r| Catagory { id: r.id, name: r.name, active: r.active }))
+        Ok(row.map(|r| Category { id: r.id, name: r.name, active: r.active }))
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
-    async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError> {
+    async fn get_all_categories(&self) -> Result<Vec<Category>, DomainError> {
         let rows = sqlx::query!(
             r#"
-            SELECT id, name, active 
+            SELECT id, name, active
             FROM catagories
             "#
         )
         .fetch_all(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
-        Ok(rows.into_iter().map(|r| Catagory { id: r.id, name: r.name, active: r.active }).collect())
+        Ok(rows.into_iter().map(|r| Category { id: r.id, name: r.name, active: r.active }).collect())
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
-    async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError> {
+    async fn update(&self, id: i64, name: String) -> Result<Category, DomainError> {
         let row = sqlx::query!(
             r#"
-            UPDATE catagories 
-            SET name = $1 
-            WHERE id = $2 
+            UPDATE catagories
+            SET name = $1
+            WHERE id = $2
             RETURNING id, name, active
             "#,
             name,
@@ -79,7 +79,7 @@ impl CatagoryRepository for PostgresCatagoryRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
-        Ok(Catagory { id: row.id, name: row.name, active: row.active })
+        Ok(Category { id: row.id, name: row.name, active: row.active })
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]

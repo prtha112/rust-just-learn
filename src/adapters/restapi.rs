@@ -9,18 +9,18 @@ use tower_http::trace::TraceLayer;
 
 use crate::{
     adapters::dto_user::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, UpdateUserReq},
-    adapters::dto_catagory::{CreateCatagoryReq, CreateCatagoryResp, CatagoryResp, UpdateCatagoryReq},
+    adapters::dto_category::{CreateCategoryReq, CreateCategoryResp, CategoryResp, UpdateCategoryReq},
     domain::DomainError,
     domain::user::Speak,
     infra::http_trace::{OtelOnResponse, record_http_request},
     usecases::user_service::UserService,
-    usecases::catagory_service::CatagoryService,
+    usecases::category_service::CategoryService,
 };
 
 #[derive(Clone)]
 pub struct AppState {
     pub user_service: UserService,
-    pub catagory_service: CatagoryService,
+    pub category_service: CategoryService,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -32,11 +32,11 @@ pub fn router(state: AppState) -> Router {
         .route("/users/:id", put(update_user))
         .route("/users/:id", delete(delete_user))
         .route("/users/:id/speak", get(user_speak))
-        .route("/catagories", post(create_catagory))
-        .route("/catagories/:id", put(update_catagory))
-        .route("/catagories", get(get_all_catagories))
-        .route("/catagories/:id", get(get_catagory))
-        .route("/catagories/:id", delete(delete_catagory))
+        .route("/categories", post(create_category))
+        .route("/categories/:id", put(update_category))
+        .route("/categories", get(get_all_categories))
+        .route("/categories/:id", get(get_category))
+        .route("/categories/:id", delete(delete_category))
         .with_state(state)
         .layer(
             TraceLayer::new_for_http()
@@ -144,14 +144,14 @@ async fn delete_user(
     }
 }
 
-async fn create_catagory(
+async fn create_category(
     State(state): State<AppState>,
-    Json(req): Json<CreateCatagoryReq>,
+    Json(req): Json<CreateCategoryReq>,
 ) -> axum::response::Response {
-    match state.catagory_service.create(req.name.clone()).await {
+    match state.category_service.create(req.name.clone()).await {
         Ok(id) => {
-            tracing::info!(catagory_id = id, name = %req.name, "catagory created");
-            (StatusCode::CREATED, Json(CreateCatagoryResp { id })).into_response()
+            tracing::info!(category_id = id, name = %req.name, "category created");
+            (StatusCode::CREATED, Json(CreateCategoryResp { id })).into_response()
         }
         Err(e) => {
             map_error(e)
@@ -159,17 +159,17 @@ async fn create_catagory(
     }
 }
 
-async fn get_all_catagories(State(state): State<AppState>) -> axum::response::Response {
-    match state.catagory_service.get_all_catagories().await {
-        Ok(catagories) => {
+async fn get_all_categories(State(state): State<AppState>) -> axum::response::Response {
+    match state.category_service.get_all_categories().await {
+        Ok(categories) => {
             tracing::info!(
-                count = catagories.len(),
-                "fetched catagories: {:#?}",
-                &catagories[..catagories.len().min(5)]
+                count = categories.len(),
+                "fetched categories: {:#?}",
+                &categories[..categories.len().min(5)]
             );
-            let resp: Vec<CatagoryResp> = catagories
+            let resp: Vec<CategoryResp> = categories
                 .into_iter()
-                .map(|c| CatagoryResp {
+                .map(|c| CategoryResp {
                     id: c.id,
                     name: c.name,
                     active: c.active,
@@ -183,15 +183,15 @@ async fn get_all_catagories(State(state): State<AppState>) -> axum::response::Re
     }
 }
 
-async fn get_catagory(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
-    match state.catagory_service.get_by_id(id).await {
+async fn get_category(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
+    match state.category_service.get_by_id(id).await {
         Ok(Some(c)) => {
-            tracing::info!(catagory_id = c.id, name = %c.name, active = c.active, "fetched catagory");
-            let resp = CatagoryResp { id: c.id, name: c.name, active: c.active };
+            tracing::info!(category_id = c.id, name = %c.name, active = c.active, "fetched category");
+            let resp = CategoryResp { id: c.id, name: c.name, active: c.active };
             (StatusCode::OK, Json(resp)).into_response()
         },
         Ok(None) => {
-            tracing::warn!(catagory_id = id, "catagory not found");
+            tracing::warn!(category_id = id, "category not found");
             (StatusCode::NOT_FOUND, "not found").into_response()
         }
         Err(e) => {
@@ -200,15 +200,15 @@ async fn get_catagory(State(state): State<AppState>, Path(id): Path<i64>) -> axu
     }
 }
 
-async fn update_catagory(
+async fn update_category(
     State(state): State<AppState>,
     Path(id): Path<i64>,
-    Json(req): Json<UpdateCatagoryReq>,
+    Json(req): Json<UpdateCategoryReq>,
 ) -> axum::response::Response {
-    match state.catagory_service.update(id, req.name).await {
+    match state.category_service.update(id, req.name).await {
         Ok(c) => {
-            tracing::info!(catagory_id = c.id, name = %c.name, active = c.active, "updated catagory");
-            let resp = CatagoryResp {
+            tracing::info!(category_id = c.id, name = %c.name, active = c.active, "updated category");
+            let resp = CategoryResp {
                 id: c.id,
                 name: c.name,
                 active: c.active,
@@ -219,13 +219,13 @@ async fn update_catagory(
     }
 }
 
-async fn delete_catagory(
+async fn delete_category(
     State(state): State<AppState>,
     Path(id): Path<i64>,
 ) -> axum::response::Response {
-    match state.catagory_service.delete(id).await {
+    match state.category_service.delete(id).await {
         Ok(_) => {
-            tracing::info!(catagory_id = id, "deleted catagory id = {:#?}", id);
+            tracing::info!(category_id = id, "deleted category id = {:#?}", id);
             (StatusCode::NO_CONTENT, Json(())).into_response()
         }
         Err(e) => map_error(e),

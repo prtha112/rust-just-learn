@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
 use crate::domain::DomainError;
-use crate::domain::catagory::{Catagory, CatagoryRepository};
+use crate::domain::category::{Category, CategoryRepository};
 
 #[derive(Clone)]
-pub struct CatagoryService {
-    repo: Arc<dyn CatagoryRepository>,
+pub struct CategoryService {
+    repo: Arc<dyn CategoryRepository>,
 }
 
-impl CatagoryService {
-    pub fn new(repo: Arc<dyn CatagoryRepository>) -> Self {
+impl CategoryService {
+    pub fn new(repo: Arc<dyn CategoryRepository>) -> Self {
         Self { repo }
     }
 
@@ -20,21 +20,21 @@ impl CatagoryService {
         self.repo.create(name).await
     }
 
-    pub async fn get_by_id(&self, id: i64) -> Result<Option<Catagory>, DomainError> {
+    pub async fn get_by_id(&self, id: i64) -> Result<Option<Category>, DomainError> {
         self.repo.get_by_id(id).await
     }
 
-    pub async fn get_all_catagories(&self) -> Result<Vec<Catagory>, DomainError> {
-        self.repo.get_all_catagories().await
+    pub async fn get_all_categories(&self) -> Result<Vec<Category>, DomainError> {
+        self.repo.get_all_categories().await
     }
 
-    pub async fn update(&self, id: i64, name: String) -> Result<Catagory, DomainError> {
+    pub async fn update(&self, id: i64, name: String) -> Result<Category, DomainError> {
         self.repo.update(id, name).await
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), DomainError> {
-        let catagory = self.repo.get_by_id(id).await?;
-        if catagory.is_none() {
+        let category = self.repo.get_by_id(id).await?;
+        if category.is_none() {
             return Err(DomainError::NotFound);
         }
         self.repo.delete(id).await

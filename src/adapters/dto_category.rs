@@ -1,23 +1,23 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct CreateCatagoryReq {
+pub struct CreateCategoryReq {
     pub name: String,
 }
 
 #[derive(Debug, Serialize)]
-pub struct CreateCatagoryResp {
+pub struct CreateCategoryResp {
     pub id: i64,
 }
 
 #[derive(Debug, Serialize)]
-pub struct CatagoryResp {
+pub struct CategoryResp {
     pub id: i64,
     pub name: String,
     pub active: bool,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct UpdateCatagoryReq {
+pub struct UpdateCategoryReq {
     pub name: String,
 }

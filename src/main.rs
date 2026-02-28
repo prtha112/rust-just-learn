@@ -7,9 +7,9 @@ use std::sync::Arc;
 
 use adapters::restapi::{router, AppState};
 use infra::user_repository::PostgresUserRepository;
-use infra::catagory_repository::PostgresCatagoryRepository;
+use infra::category_repository::PostgresCategoryRepository;
 use usecases::user_service::UserService;
-use usecases::catagory_service::CatagoryService;
+use usecases::category_service::CategoryService;
 use sqlx::postgres::PgPoolOptions;
 use dotenvy::dotenv;
 use std::env;
@@ -43,10 +43,10 @@ async fn main() {
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
     let user_service = UserService::new(user_repo);
 
-    let catagory_repo = Arc::new(PostgresCatagoryRepository::new(pool));
-    let catagory_service = CatagoryService::new(catagory_repo);
+    let category_repo = Arc::new(PostgresCategoryRepository::new(pool));
+    let category_service = CategoryService::new(category_repo);
 
-    let state = AppState { user_service, catagory_service };
+    let state = AppState { user_service, category_service };
     let app = router(state);
 
     let listener = tokio::net::TcpListener::bind(&address)
