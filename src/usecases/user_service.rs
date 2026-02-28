@@ -42,6 +42,10 @@ impl UserService {
     }
 
     pub async fn delete_user(&self, id: i64) -> Result<(), DomainError> {
+        let user = self.repo.get_by_id(id).await?;
+        if user.is_none() {
+            return Err(DomainError::NotFound);
+        }
         self.repo.delete(id).await
     }
 }

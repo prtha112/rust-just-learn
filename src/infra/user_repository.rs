@@ -112,10 +112,6 @@ impl UserRepository for PostgresUserRepository {
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn delete(&self, id: i64) -> Result<(), DomainError> {
-        let row = self.get_by_id(id).await?;
-        if row.is_none() {
-            return Err(DomainError::NotFound);
-        }
         let _row = sqlx::query!(
             r#"
             DELETE FROM users
