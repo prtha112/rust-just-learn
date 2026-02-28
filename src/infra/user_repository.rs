@@ -109,4 +109,24 @@ impl UserRepository for PostgresUserRepository {
             active: row.active,
         })
     }
+
+    #[instrument(skip(self), err, fields(db = "postgres"))]
+    async fn delete(&self, id: i64) -> Result<(), DomainError> {
+        let row = self.get_by_id(id).await?;
+        if row.is_none() {
+            return Err(DomainError::NotFound);
+        }
+        let _row = sqlx::query!(
+            r#"
+            DELETE FROM users
+            WHERE id = $1
+            "#,
+            id
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+
+        Ok(())
+    }
 }

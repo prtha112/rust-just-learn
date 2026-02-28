@@ -2,7 +2,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post, put},
+    routing::{get, post, put, delete},
     Json, Router,
 };
 use tower_http::trace::TraceLayer;
@@ -30,6 +30,7 @@ pub fn router(state: AppState) -> Router {
         .route("/users", get(get_all_users))
         .route("/users/:id", get(get_user))
         .route("/users/:id", put(update_user))
+        .route("/users/:id", delete(delete_user))
         .route("/users/:id/speak", get(user_speak))
         .route("/catagories", post(create_catagory))
         .route("/catagories/:id", put(update_catagory))
@@ -124,6 +125,19 @@ async fn user_speak(State(state): State<AppState>, Path(id): Path<i64>) -> axum:
                 Err(e) => return map_error(e),
             };
             (StatusCode::OK, Json(SpeakResp { speak, shout })).into_response()
+        }
+        Err(e) => map_error(e),
+    }
+}
+
+async fn delete_user(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> axum::response::Response {
+    match state.user_service.delete_user(id).await {
+        Ok(_) => {
+            tracing::info!(user_id = id, "deleted user id = {:#?}", id);
+            (StatusCode::OK, Json(id)).into_response()
         }
         Err(e) => map_error(e),
     }

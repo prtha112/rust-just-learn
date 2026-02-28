@@ -40,4 +40,8 @@ impl UserService {
         }
         self.repo.update(id, username, password).await
     }
+
+    pub async fn delete_user(&self, id: i64) -> Result<(), DomainError> {
+        self.repo.delete(id).await
+    }
 }
