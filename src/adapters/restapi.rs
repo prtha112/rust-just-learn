@@ -207,6 +207,7 @@ async fn update_catagory(
 ) -> axum::response::Response {
     match state.catagory_service.update(id, req.name).await {
         Ok(c) => {
+            tracing::info!(catagory_id = c.id, name = %c.name, active = c.active, "updated catagory");
             let resp = CatagoryResp {
                 id: c.id,
                 name: c.name,
