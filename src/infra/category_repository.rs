@@ -31,12 +31,14 @@ impl CategoryRepository for PostgresCategoryRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+
         Ok(row.id)
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn get_by_id(&self, id: i64) -> Result<Option<Category>, DomainError> {
-        let row = sqlx::query!(
+        let row = sqlx::query_as!(
+            Category,
             r#"
             SELECT id, name, active
             FROM catagories
@@ -47,12 +49,14 @@ impl CategoryRepository for PostgresCategoryRepository {
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
-        Ok(row.map(|r| Category { id: r.id, name: r.name, active: r.active }))
+
+        Ok(row)
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn get_all_categories(&self) -> Result<Vec<Category>, DomainError> {
-        let rows = sqlx::query!(
+        let rows = sqlx::query_as!(
+            Category,
             r#"
             SELECT id, name, active
             FROM catagories
@@ -61,12 +65,14 @@ impl CategoryRepository for PostgresCategoryRepository {
         .fetch_all(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
-        Ok(rows.into_iter().map(|r| Category { id: r.id, name: r.name, active: r.active }).collect())
+
+        Ok(rows)
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
     async fn update(&self, id: i64, name: String) -> Result<Category, DomainError> {
-        let row = sqlx::query!(
+        let row = sqlx::query_as!(
+            Category,
             r#"
             UPDATE catagories
             SET name = $1
@@ -79,7 +85,8 @@ impl CategoryRepository for PostgresCategoryRepository {
         .fetch_one(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
-        Ok(Category { id: row.id, name: row.name, active: row.active })
+
+        Ok(row)
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
@@ -94,6 +101,7 @@ impl CategoryRepository for PostgresCategoryRepository {
         .execute(&self.pool)
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+    
         Ok(())
     }
 }
