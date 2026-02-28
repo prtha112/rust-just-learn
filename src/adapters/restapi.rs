@@ -138,7 +138,7 @@ async fn delete_user(
     match state.user_service.delete_user(id).await {
         Ok(_) => {
             tracing::info!(user_id = id, "deleted user id = {:#?}", id);
-            (StatusCode::OK, Json(id)).into_response()
+            (StatusCode::NO_CONTENT, Json(())).into_response()
         }
         Err(e) => map_error(e),
     }
@@ -225,7 +225,7 @@ async fn delete_catagory(
     match state.catagory_service.delete(id).await {
         Ok(_) => {
             tracing::info!(catagory_id = id, "deleted catagory id = {:#?}", id);
-            (StatusCode::OK, Json(id)).into_response()
+            (StatusCode::NO_CONTENT, Json(())).into_response()
         }
         Err(e) => map_error(e),
     }
