@@ -3,7 +3,7 @@ use sqlx::PgPool;
 use tracing::instrument;
 
 use crate::domain::catagory::{Catagory, CatagoryRepository};
-use crate::domain::user::DomainError;
+use crate::domain::DomainError;
 
 #[derive(Clone)]
 pub struct PostgresCatagoryRepository {

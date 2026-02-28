@@ -1,5 +1,6 @@
 use async_trait::async_trait;
-use thiserror::Error;
+
+use crate::domain::DomainError;
 
 #[derive(Debug)]
 pub struct User {
@@ -31,16 +32,6 @@ impl Speak for User {
     fn speak(&self) -> Result<String, Self::Err> {
         Ok(format!("Hello {}", self.username))
     }
-}
-
-#[derive(Debug, Error)]
-pub enum DomainError {
-    #[error("validation error: {0}")]
-    Validation(String),
-    #[error("not found")]
-    NotFound,
-    #[error("unexpected error: {0}")]
-    Unexpected(String),
 }
 
 #[async_trait]

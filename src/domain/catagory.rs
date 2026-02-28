@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::domain::user::DomainError;
+use crate::domain::DomainError;
 
 #[async_trait]
 pub trait CatagoryRepository: Send + Sync {

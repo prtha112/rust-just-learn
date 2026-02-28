@@ -1,5 +1,6 @@
 use std::sync::Arc;
-use crate::domain::user::{DomainError, User, UserRepository};
+use crate::domain::DomainError;
+use crate::domain::user::{User, UserRepository};
 
 #[derive(Clone)]
 pub struct UserService {

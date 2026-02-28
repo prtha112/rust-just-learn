@@ -10,8 +10,8 @@ use tower_http::trace::TraceLayer;
 use crate::{
     adapters::dto_user::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, UpdateUserReq},
     adapters::dto_catagory::{CreateCatagoryReq, CreateCatagoryResp, CatagoryResp, UpdateCatagoryReq},
-    domain::catagory::CatagoryRepository,
-    domain::user::{DomainError, Speak},
+    domain::DomainError,
+    domain::user::Speak,
     infra::http_trace::{OtelOnResponse, record_http_request},
     usecases::user_service::UserService,
     usecases::catagory_service::CatagoryService,

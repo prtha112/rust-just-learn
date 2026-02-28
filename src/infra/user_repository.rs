@@ -2,7 +2,8 @@ use async_trait::async_trait;
 use sqlx::PgPool;
 use tracing::instrument;
 
-use crate::domain::user::{DomainError, User, UserRepository};
+use crate::domain::DomainError;
+use crate::domain::user::{User, UserRepository};
 
 #[derive(Clone)]
 pub struct PostgresUserRepository {
