@@ -25,3 +25,9 @@ pub struct UserResp {
     pub active: bool,
     pub greet: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct UpdateUserReq {
+    pub username: String,
+    pub password: String,
+}

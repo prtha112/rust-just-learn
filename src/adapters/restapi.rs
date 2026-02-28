@@ -8,7 +8,7 @@ use axum::{
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    adapters::dto_user::{CreateUserReq, CreateUserResp, SpeakResp, UserResp},
+    adapters::dto_user::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, UpdateUserReq},
     adapters::dto_catagory::{CreateCatagoryReq, CreateCatagoryResp, CatagoryResp, UpdateCatagoryReq},
     domain::catagory::CatagoryRepository,
     domain::user::{DomainError, Speak},
@@ -29,6 +29,7 @@ pub fn router(state: AppState) -> Router {
         .route("/users", post(create_user))
         .route("/users", get(get_all_users))
         .route("/users/:id", get(get_user))
+        .route("/users/:id", put(update_user))
         .route("/users/:id/speak", get(user_speak))
         .route("/catagories", post(create_catagory))
         .route("/catagories/:id", put(update_catagory))
@@ -60,7 +61,6 @@ async fn create_user(
             (StatusCode::CREATED, Json(CreateUserResp { id })).into_response()
         }
         Err(e) => {
-            tracing::warn!(error = %e, "create_user failed");
             map_error(e)
         }
     }
@@ -77,7 +77,6 @@ async fn get_all_users(State(state): State<AppState>) -> axum::response::Respons
             (StatusCode::OK, Json(resp)).into_response()
         },
         Err(e) => {
-            tracing::warn!(error = %e, "get_all_users failed");
             map_error(e)
         }
     }
@@ -86,15 +85,30 @@ async fn get_all_users(State(state): State<AppState>) -> axum::response::Respons
 async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.user_service.get_user(id).await {
         Ok(u) => {
-            tracing::info!(user_id = u.id, username = %u.username, active = u.active, "fetched user");
+            tracing::info!(user_id = u.id, username = %u.username, active = u.active, "fetched user {:#?}", u);
             let greet = u.greet();
             let resp = UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet };
             (StatusCode::OK, Json(resp)).into_response()
         },
         Err(e) => {
-            tracing::warn!(user_id = id, error = %e, "get_user failed");
             map_error(e)
         }
+    }
+}
+
+async fn update_user(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+    Json(req): Json<UpdateUserReq>,
+) -> axum::response::Response {
+    match state.user_service.update_user(id, req.username, req.password).await {
+        Ok(u) => {
+            tracing::info!(user_id = u.id, username = %u.username, active = u.active, "updated user {:#?}", u);
+            let greet = u.greet();
+            let resp = UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet };
+            (StatusCode::OK, Json(resp)).into_response()
+        },
+        Err(e) => map_error(e),
     }
 }
 
@@ -125,7 +139,6 @@ async fn create_catagory(
             (StatusCode::CREATED, Json(CreateCatagoryResp { id })).into_response()
         }
         Err(e) => {
-            tracing::warn!(error = %e, "create_catagory failed");
             map_error(e)
         }
     }
@@ -141,7 +154,6 @@ async fn get_all_catagories(State(state): State<AppState>) -> axum::response::Re
             (StatusCode::OK, Json(resp)).into_response()
         },
         Err(e) => {
-            tracing::warn!(error = %e, "get_all_catagories failed");
             map_error(e)
         }
     }
@@ -159,7 +171,6 @@ async fn get_catagory(State(state): State<AppState>, Path(id): Path<i64>) -> axu
             (StatusCode::NOT_FOUND, "not found").into_response()
         }
         Err(e) => {
-            tracing::warn!(catagory_id = id, error = %e, "get_catagory failed");
             map_error(e)
         }
     }
@@ -186,8 +197,17 @@ async fn update_catagory(
 // ---- error mapping (adapter responsibility) ----
 fn map_error(e: DomainError) -> axum::response::Response {
     match e {
-        DomainError::Validation(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),
-        DomainError::NotFound => (StatusCode::NOT_FOUND, "not found").into_response(),
-        DomainError::Unexpected(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response(),
+        DomainError::Validation(msg) => {
+            tracing::warn!(error = %msg, "validation error");
+            (StatusCode::BAD_REQUEST, msg).into_response()
+        },
+        DomainError::NotFound => {
+            tracing::warn!(error = "not found", "not found");
+            (StatusCode::NOT_FOUND, "not found").into_response()
+        },
+        DomainError::Unexpected(msg) => {
+            tracing::warn!(error = %msg, "unexpected error");
+            (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
+        },
     }
 }

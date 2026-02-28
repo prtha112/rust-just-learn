@@ -85,4 +85,28 @@ impl UserRepository for PostgresUserRepository {
         }).collect())
     }
 
+    #[instrument(skip(self), err, fields(db = "postgres"))]
+    async fn update(&self, id: i64, username: String, password: String) -> Result<User, DomainError> {
+        let row = sqlx::query_as!(User, 
+            r#"
+            UPDATE users 
+            SET username = $1, password = $2 
+            WHERE id = $3 
+            RETURNING id, username, password, active
+            "#,
+            username,
+            password,
+            id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+
+        Ok(User {
+            id: row.id,
+            username: row.username,
+            password: Self::mask_password(row.password),
+            active: row.active,
+        })
+    }
 }

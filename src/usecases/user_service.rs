@@ -30,4 +30,14 @@ impl UserService {
         let users = self.repo.get_all_users().await?;
         Ok(users)
     }
+
+    pub async fn update_user(&self, id: i64, username: String, password: String) -> Result<User, DomainError> {
+        if username.trim().is_empty() {
+            return Err(DomainError::Validation("username is required".into()));
+        }
+        if password.trim().is_empty() {
+            return Err(DomainError::Validation("password is required".into()));
+        }
+        self.repo.update(id, username, password).await
+    }
 }
