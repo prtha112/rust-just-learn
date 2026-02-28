@@ -16,11 +16,7 @@ impl PostgresUserRepository {
     }
 
     fn mask_password(password: String) -> String {
-        let mut masked_password = String::new();
-        for _ in 0..password.len() {
-            masked_password.push('*');
-        }
-        masked_password
+        "*".repeat(password.len())
     }
 }
 
