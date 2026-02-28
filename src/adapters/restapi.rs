@@ -59,7 +59,7 @@ async fn create_user(
 ) -> axum::response::Response {
     match state.user_service.create_user(req.username.clone(), req.password).await {
         Ok(id) => {
-            tracing::info!(user_id = id, username = %req.username, "user created");
+            tracing::info!(user_id = id, username = %req.username, "user created: {:#?}", req.username.clone());
             (StatusCode::CREATED, Json(CreateUserResp { id })).into_response()
         }
         Err(e) => {
@@ -71,7 +71,7 @@ async fn create_user(
 async fn get_all_users(State(state): State<AppState>) -> axum::response::Response {
     match state.user_service.get_all_users().await {
         Ok(users) => {
-            tracing::info!(count = users.len(), "fetched users");
+            tracing::info!(count = users.len(), "fetched users: {:#?}", &users[..users.len().min(5)]);
             let resp: Vec<UserResp> = users.into_iter().map(|u| {
                 let greet = u.greet();
                 UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet }
