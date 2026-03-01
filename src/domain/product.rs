@@ -16,6 +16,6 @@ pub struct Product {
 #[async_trait]
 pub trait ProductRepository: Send + Sync {
     async fn create(&self, product: Product) -> Result<i64, DomainError>;
-    async fn get_by_id(&self, id: i64) -> Result<Option<Product>, DomainError>;
+    async fn get_by_product_id(&self, id: i64) -> Result<Option<Product>, DomainError>;
     async fn get_by_category_id(&self, category_id: i64) -> Result<Vec<Product>, DomainError>;
 }

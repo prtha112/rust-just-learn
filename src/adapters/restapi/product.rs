@@ -38,7 +38,7 @@ pub async fn create_product(
 }
 
 pub async fn get_product(_claims: Claims, State(state): State<AppState>, axum::extract::Path(id): axum::extract::Path<i64>) -> axum::response::Response {
-    match state.product_service.get_by_id(id).await {
+    match state.product_service.get_by_product_id(id).await {
         Ok(Some(p)) => {
             tracing::info!(product_id = p.id, name = %p.name, active = p.active, "fetched product");
             let resp = ProductResp {

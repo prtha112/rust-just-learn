@@ -41,7 +41,7 @@ impl ProductRepository for PostgresProductRepository {
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]
-    async fn get_by_id(&self, id: i64) -> Result<Option<Product>, DomainError> {
+    async fn get_by_product_id(&self, id: i64) -> Result<Option<Product>, DomainError> {
         let row = sqlx::query_as!(
             Product,
             r#"
