@@ -8,7 +8,7 @@ use axum::{
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    adapters::dto_user::{CreateUserReq, CreateUserResp, SpeakResp, UserResp, UpdateUserReq},
+    adapters::dto_user::{CreateUserReq, CreateUserResp, LoginReq, SpeakResp, UserResp, UpdateUserReq},
     adapters::dto_category::{CreateCategoryReq, CreateCategoryResp, CategoryResp, UpdateCategoryReq},
     domain::DomainError,
     domain::user::Speak,
@@ -73,10 +73,7 @@ async fn get_all_users(State(state): State<AppState>) -> axum::response::Respons
     match state.user_service.get_all_users().await {
         Ok(users) => {
             tracing::info!(count = users.len(), "fetched users: {:#?}", &users[..users.len().min(5)]);
-            let resp: Vec<UserResp> = users.into_iter().map(|u| {
-                let greet = u.greet();
-                UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet }
-            }).collect();
+            let resp: Vec<UserResp> = users.into_iter().map(UserResp::from).collect();
             (StatusCode::OK, Json(resp)).into_response()
         },
         Err(e) => {
@@ -89,9 +86,7 @@ async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> axum::r
     match state.user_service.get_user(id).await {
         Ok(u) => {
             tracing::info!(user_id = u.id, username = %u.username, active = u.active, "fetched user {:#?}", u);
-            let greet = u.greet();
-            let resp = UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet };
-            (StatusCode::OK, Json(resp)).into_response()
+            (StatusCode::OK, Json(UserResp::from(u))).into_response()
         },
         Err(e) => {
             map_error(e)
@@ -107,9 +102,7 @@ async fn update_user(
     match state.user_service.update_user(id, req.username, req.password).await {
         Ok(u) => {
             tracing::info!(user_id = u.id, username = %u.username, active = u.active, "updated user {:#?}", u);
-            let greet = u.greet();
-            let resp = UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet };
-            (StatusCode::OK, Json(resp)).into_response()
+            (StatusCode::OK, Json(UserResp::from(u))).into_response()
         },
         Err(e) => map_error(e),
     }
@@ -235,14 +228,12 @@ async fn delete_category(
 
 async fn login_user(
     State(state): State<AppState>,
-    Json(req): Json<CreateUserReq>,
+    Json(req): Json<LoginReq>,
 ) -> axum::response::Response {
     match state.user_service.login(req.username.clone(), req.password).await {
         Ok(u) => {
             tracing::info!(user_id = u.id, username = %u.username, active = u.active, "user logged in: {:#?}", u);
-            let greet = u.greet();
-            let resp = UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet };
-            (StatusCode::OK, Json(resp)).into_response()
+            (StatusCode::OK, Json(UserResp::from(u))).into_response()
         },
         Err(e) => map_error(e),
     }
