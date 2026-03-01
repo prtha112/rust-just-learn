@@ -63,7 +63,7 @@ async fn create_user(
 ) -> axum::response::Response {
     match state.user_service.create_user(req.username.clone(), req.password).await {
         Ok(id) => {
-            tracing::info!(user_id = id, username = %req.username, "user created: {:#?}", req.username.clone());
+            tracing::info!(user_id = id, username = %req.username, "user created: {:#?}", req.username);
             (StatusCode::CREATED, Json(CreateUserResp { id })).into_response()
         }
         Err(e) => {

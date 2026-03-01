@@ -19,7 +19,7 @@ pub fn sign_token(user_id: i64, username: String) -> Result<String, DomainError>
 
     let exp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?
         .as_secs() as usize
         + 24 * 3600;
 
