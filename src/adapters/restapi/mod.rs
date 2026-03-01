@@ -9,17 +9,18 @@ use tower_http::trace::TraceLayer;
 use crate::{
     domain::DomainError,
     infra::http_trace::{OtelOnResponse, record_http_request},
-    usecases::user_service::UserService,
-    usecases::category_service::CategoryService,
+    usecases::{category_service::CategoryService, user_service::UserService, product_service::ProductService},
 };
 
 mod user;
 mod category;
+mod product;
 
 #[derive(Clone)]
 pub struct AppState {
     pub user_service: UserService,
     pub category_service: CategoryService,
+    pub product_service: ProductService,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -37,6 +38,8 @@ pub fn router(state: AppState) -> Router {
         .route("/categories/:id", get(category::get_category))
         .route("/categories/:id", put(category::update_category))
         .route("/categories/:id", delete(category::delete_category))
+        .route("/products", post(product::create_product))
+        .route("/products/:id", get(product::get_product))
         .with_state(state)
         .layer(
             TraceLayer::new_for_http()
