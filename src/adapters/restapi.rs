@@ -8,11 +8,12 @@ use axum::{
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    adapters::dto_user::{CreateUserReq, CreateUserResp, LoginReq, SpeakResp, UserResp, UpdateUserReq},
+    adapters::dto_user::{CreateUserReq, CreateUserResp, LoginReq, LoginResp, SpeakResp, UserResp, UpdateUserReq},
     adapters::dto_category::{CreateCategoryReq, CreateCategoryResp, CategoryResp, UpdateCategoryReq},
     domain::DomainError,
     domain::user::Speak,
     infra::http_trace::{OtelOnResponse, record_http_request},
+    infra::jwt::{sign_token, Claims},
     usecases::user_service::UserService,
     usecases::category_service::CategoryService,
 };
@@ -69,7 +70,7 @@ async fn create_user(
     }
 }
 
-async fn get_all_users(State(state): State<AppState>) -> axum::response::Response {
+async fn get_all_users(_claims: Claims, State(state): State<AppState>) -> axum::response::Response {
     match state.user_service.get_all_users().await {
         Ok(users) => {
             tracing::info!(count = users.len(), "fetched users: {:#?}", &users[..users.len().min(5)]);
@@ -82,7 +83,7 @@ async fn get_all_users(State(state): State<AppState>) -> axum::response::Respons
     }
 }
 
-async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
+async fn get_user(_claims: Claims, State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.user_service.get_user(id).await {
         Ok(u) => {
             tracing::info!(user_id = u.id, username = %u.username, active = u.active, "fetched user {:#?}", u);
@@ -95,6 +96,7 @@ async fn get_user(State(state): State<AppState>, Path(id): Path<i64>) -> axum::r
 }
 
 async fn update_user(
+    _claims: Claims,
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Json(req): Json<UpdateUserReq>,
@@ -108,7 +110,7 @@ async fn update_user(
     }
 }
 
-async fn user_speak(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
+async fn user_speak(_claims: Claims, State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.user_service.get_user(id).await {
         Ok(u) => {
             let speak = match u.speak() {
@@ -126,6 +128,7 @@ async fn user_speak(State(state): State<AppState>, Path(id): Path<i64>) -> axum:
 }
 
 async fn delete_user(
+    _claims: Claims,
     State(state): State<AppState>,
     Path(id): Path<i64>,
 ) -> axum::response::Response {
@@ -139,6 +142,7 @@ async fn delete_user(
 }
 
 async fn create_category(
+    _claims: Claims,
     State(state): State<AppState>,
     Json(req): Json<CreateCategoryReq>,
 ) -> axum::response::Response {
@@ -153,7 +157,7 @@ async fn create_category(
     }
 }
 
-async fn get_all_categories(State(state): State<AppState>) -> axum::response::Response {
+async fn get_all_categories(_claims: Claims, State(state): State<AppState>) -> axum::response::Response {
     match state.category_service.get_all_categories().await {
         Ok(categories) => {
             tracing::info!(
@@ -177,7 +181,7 @@ async fn get_all_categories(State(state): State<AppState>) -> axum::response::Re
     }
 }
 
-async fn get_category(State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
+async fn get_category(_claims: Claims, State(state): State<AppState>, Path(id): Path<i64>) -> axum::response::Response {
     match state.category_service.get_by_id(id).await {
         Ok(Some(c)) => {
             tracing::info!(category_id = c.id, name = %c.name, active = c.active, "fetched category");
@@ -195,6 +199,7 @@ async fn get_category(State(state): State<AppState>, Path(id): Path<i64>) -> axu
 }
 
 async fn update_category(
+    _claims: Claims,
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Json(req): Json<UpdateCategoryReq>,
@@ -214,6 +219,7 @@ async fn update_category(
 }
 
 async fn delete_category(
+    _claims: Claims,
     State(state): State<AppState>,
     Path(id): Path<i64>,
 ) -> axum::response::Response {
@@ -230,10 +236,15 @@ async fn login_user(
     State(state): State<AppState>,
     Json(req): Json<LoginReq>,
 ) -> axum::response::Response {
-    match state.user_service.login(req.username.clone(), req.password).await {
+    match state.user_service.login(req.username, req.password).await {
         Ok(u) => {
-            tracing::info!(user_id = u.id, username = %u.username, active = u.active, "user logged in: {:#?}", u);
-            (StatusCode::OK, Json(UserResp::from(u))).into_response()
+            match sign_token(u.id, u.username.clone()) {
+                Ok(token) => {
+                    tracing::info!(user_id = u.id, username = %u.username, "user logged in");
+                    (StatusCode::OK, Json(LoginResp { token })).into_response()
+                }
+                Err(e) => map_error(e),
+            }
         },
         Err(e) => map_error(e),
     }

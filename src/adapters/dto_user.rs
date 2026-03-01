@@ -20,6 +20,11 @@ pub struct CreateUserResp {
 }
 
 #[derive(Debug, Serialize)]
+pub struct LoginResp {
+    pub token: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct SpeakResp {
     pub speak: String,
     pub shout: String,
