@@ -29,6 +29,12 @@ impl CategoryService {
     }
 
     pub async fn update(&self, id: i64, name: String) -> Result<Category, DomainError> {
+        if name.trim().is_empty() {
+            return Err(DomainError::Validation("name is required".into()));
+        }
+        if self.repo.get_by_id(id).await?.is_none() {
+            return Err(DomainError::NotFound);
+        }
         self.repo.update(id, name).await
     }
 

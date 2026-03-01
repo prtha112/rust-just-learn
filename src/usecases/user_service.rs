@@ -39,6 +39,9 @@ impl UserService {
         if password.trim().is_empty() {
             return Err(DomainError::Validation("password is required".into()));
         }
+        if self.repo.get_by_id(id).await?.is_none() {
+            return Err(DomainError::NotFound);
+        }
         self.repo.update(id, username, password).await
     }
 
