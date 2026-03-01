@@ -161,3 +161,10 @@ let max_connection = env::var("MAX_CONNECTION")
         .parse::<u32>()
         .unwrap(); // This is not best practice because it will panic if the value is not a number
 ```
+
+## Serialize, Deserialize, Debug
+| Macro	| มาจาก |	ทิศทาง | ใช้เมื่อ |
+| --- | --- | --- | --- |
+| Debug	| std	| ไม่มีทิศทาง | แสดงผลเพื่อ debug |
+| Serialize	| serde	| Struct → JSON	| ส่งข้อมูลออก (response) |
+| Deserialize	 | serde | JSON → Struct |	รับข้อมูลเข้า (request) |
