@@ -28,8 +28,7 @@ impl UserService {
     }
 
     pub async fn get_all_users(&self) -> Result<Vec<User>, DomainError> {
-        let users = self.repo.get_all_users().await?;
-        Ok(users)
+        self.repo.get_all_users().await
     }
 
     pub async fn update_user(&self, id: i64, username: String, password: String) -> Result<User, DomainError> {
