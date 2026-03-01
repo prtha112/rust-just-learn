@@ -57,4 +57,22 @@ impl ProductRepository for PostgresProductRepository {
 
         Ok(row) 
     }
+
+    #[instrument(skip(self), err, fields(db = "postgres"))]
+    async fn get_by_category_id(&self, category_id: i64) -> Result<Vec<Product>, DomainError> {
+        let rows = sqlx::query_as!(
+            Product,
+            r#"
+            SELECT id, name, description, price::float8 as "price!", stock, category_id, active
+            FROM products
+            WHERE category_id = $1
+            "#,
+            category_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+
+        Ok(rows)
+    }
 }

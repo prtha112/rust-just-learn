@@ -23,4 +23,8 @@ impl ProductService {
     pub async fn get_by_id(&self, id: i64) -> Result<Option<Product>, DomainError> {
         self.repo.get_by_id(id).await
     }
+
+    pub async fn get_by_category_id(&self, category_id: i64) -> Result<Vec<Product>, DomainError> {
+        self.repo.get_by_category_id(category_id).await
+    }
 }

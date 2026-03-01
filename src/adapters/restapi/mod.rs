@@ -40,6 +40,7 @@ pub fn router(state: AppState) -> Router {
         .route("/categories/:id", delete(category::delete_category))
         .route("/products", post(product::create_product))
         .route("/products/:id", get(product::get_product))
+        .route("/products/categories/:id", get(product::get_products_by_category))
         .with_state(state)
         .layer(
             TraceLayer::new_for_http()

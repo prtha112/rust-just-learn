@@ -52,7 +52,28 @@ pub async fn get_product(_claims: Claims, State(state): State<AppState>, axum::e
             };
             (StatusCode::OK, Json(resp)).into_response()
         },
-        Ok(None) => (StatusCode::NOT_FOUND, "Product not found").into_response(),
+        Ok(None) => {
+            (StatusCode::NOT_FOUND, "Product not found").into_response()
+        },
+        Err(e) => super::map_error(e),
+    }
+}
+
+pub async fn get_products_by_category(_claims: Claims, State(state): State<AppState>, axum::extract::Path(category_id): axum::extract::Path<i64>) -> axum::response::Response {
+    match state.product_service.get_by_category_id(category_id).await {
+        Ok(products) => {
+            tracing::info!(category_id = category_id, product_count = products.len(), "fetched products by category {}", category_id);
+            let resp: Vec<ProductResp> = products.into_iter().map(|p| ProductResp {
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                price: p.price,
+                stock: p.stock,
+                category_id: p.category_id,
+                active: p.active,
+            }).collect();
+            (StatusCode::OK, Json(resp)).into_response()
+        },
         Err(e) => super::map_error(e),
     }
 }
