@@ -20,6 +20,9 @@ impl UserService {
         if password.trim().is_empty() {
             return Err(DomainError::Validation("password is required".into()));
         }
+        if self.repo.get_by_username(username.clone()).await?.is_some() {
+            return Err(DomainError::Validation("username already exists".into()));
+        }
         self.repo.create(username, password).await
     }
 
