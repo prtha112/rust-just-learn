@@ -13,6 +13,7 @@ use crate::{
     domain::DomainError,
     domain::user::Speak,
     infra::http_trace::{OtelOnResponse, record_http_request},
+    adapters::auth_middleware::ApiKey,
     infra::jwt::{sign_token, Claims},
     usecases::user_service::UserService,
     usecases::category_service::CategoryService,
@@ -56,6 +57,7 @@ async fn health() -> &'static str {
 }
 
 async fn create_user(
+    _api_key: ApiKey,
     State(state): State<AppState>,
     Json(req): Json<CreateUserReq>,
 ) -> axum::response::Response {
