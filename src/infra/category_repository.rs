@@ -22,7 +22,7 @@ impl CategoryRepository for PostgresCategoryRepository {
     async fn create(&self, name: String) -> Result<i64, DomainError> {
         let row = sqlx::query!(
             r#"
-            INSERT INTO catagories (name)
+            INSERT INTO categories (name)
             VALUES ($1)
             RETURNING id
             "#,
@@ -41,7 +41,7 @@ impl CategoryRepository for PostgresCategoryRepository {
             Category,
             r#"
             SELECT id, name, active
-            FROM catagories
+            FROM categories
             WHERE id = $1
             "#,
             id
@@ -59,7 +59,7 @@ impl CategoryRepository for PostgresCategoryRepository {
             Category,
             r#"
             SELECT id, name, active
-            FROM catagories
+            FROM categories
             "#
         )
         .fetch_all(&self.pool)
@@ -74,7 +74,7 @@ impl CategoryRepository for PostgresCategoryRepository {
         let row = sqlx::query_as!(
             Category,
             r#"
-            UPDATE catagories
+            UPDATE categories
             SET name = $1
             WHERE id = $2
             RETURNING id, name, active
@@ -93,7 +93,7 @@ impl CategoryRepository for PostgresCategoryRepository {
     async fn delete(&self, id: i64) -> Result<(), DomainError> {
         let _row = sqlx::query!(
             r#"
-            DELETE FROM catagories
+            DELETE FROM categories
             WHERE id = $1
             "#,
             id
