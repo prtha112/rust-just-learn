@@ -26,6 +26,7 @@ pub struct AppState {
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
+        .route("/login", post(login_user))
         .route("/users", post(create_user))
         .route("/users", get(get_all_users))
         .route("/users/:id", get(get_user))
@@ -232,6 +233,21 @@ async fn delete_category(
     }
 }
 
+async fn login_user(
+    State(state): State<AppState>,
+    Json(req): Json<CreateUserReq>,
+) -> axum::response::Response {
+    match state.user_service.login(req.username.clone(), req.password).await {
+        Ok(u) => {
+            tracing::info!(user_id = u.id, username = %u.username, active = u.active, "user logged in: {:#?}", u);
+            let greet = u.greet();
+            let resp = UserResp { id: u.id, username: u.username, password: u.password, active: u.active, greet };
+            (StatusCode::OK, Json(resp)).into_response()
+        },
+        Err(e) => map_error(e),
+    }
+}
+
 // ---- error mapping (adapter responsibility) ----
 fn map_error(e: DomainError) -> axum::response::Response {
     match e {
@@ -242,6 +258,10 @@ fn map_error(e: DomainError) -> axum::response::Response {
         DomainError::NotFound => {
             tracing::warn!(error = "not found", "not found");
             (StatusCode::NOT_FOUND, "not found").into_response()
+        },
+        DomainError::Unauthorized => {
+            tracing::warn!(error = "unauthorized", "unauthorized");
+            (StatusCode::UNAUTHORIZED, "unauthorized").into_response()
         },
         DomainError::Unexpected(msg) => {
             tracing::warn!(error = %msg, "unexpected error");

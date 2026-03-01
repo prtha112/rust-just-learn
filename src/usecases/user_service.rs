@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use crate::domain::DomainError;
 use crate::domain::user::{User, UserRepository};
+use crate::infra::crypto::verify_password;
 
 #[derive(Clone)]
 pub struct UserService {
@@ -50,5 +51,17 @@ impl UserService {
             return Err(DomainError::NotFound);
         }
         self.repo.delete(id).await
+    }
+
+    pub async fn login(&self, username: String, password: String) -> Result<User, DomainError> {
+        let user = match self.repo.get_by_username(username).await? {
+            Some(u) => u,
+            None => return Err(DomainError::Unauthorized),
+        };
+
+        if !verify_password(password, user.password.clone()).await? {
+            return Err(DomainError::Unauthorized);
+        }
+        Ok(user)
     }
 }

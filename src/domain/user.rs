@@ -38,6 +38,7 @@ impl Speak for User {
 pub trait UserRepository: Send + Sync {
     async fn create(&self, username: String, password: String) -> Result<i64, DomainError>;
     async fn get_by_id(&self, id: i64) -> Result<Option<User>, DomainError>;
+    async fn get_by_username(&self, username: String) -> Result<Option<User>, DomainError>;
     async fn get_all_users(&self) -> Result<Vec<User>, DomainError>;
     async fn update(&self, id: i64, username: String, password: String) -> Result<User, DomainError>;
     async fn delete(&self, id: i64) -> Result<(), DomainError>;

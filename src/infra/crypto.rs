@@ -1,0 +1,30 @@
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
+
+use crate::domain::DomainError;
+
+pub async fn hash_password(password: String) -> Result<String, DomainError> {
+    tokio::task::spawn_blocking(move || {
+        let salt = SaltString::generate(&mut OsRng);
+        Argon2::default()
+            .hash_password(password.as_bytes(), &salt)
+            .map(|h| h.to_string())
+            .map_err(|e| DomainError::Unexpected(e.to_string()))
+    })
+    .await
+    .map_err(|e| DomainError::Unexpected(e.to_string()))?
+}
+
+pub async fn verify_password(password: String, hash: String) -> Result<bool, DomainError> {
+    tokio::task::spawn_blocking(move || {
+        let parsed = PasswordHash::new(&hash)
+            .map_err(|e| DomainError::Unexpected(e.to_string()))?;
+        Ok(Argon2::default()
+            .verify_password(password.as_bytes(), &parsed)
+            .is_ok())
+    })
+    .await
+    .map_err(|e| DomainError::Unexpected(e.to_string()))?
+}

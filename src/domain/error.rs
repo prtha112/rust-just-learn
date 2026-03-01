@@ -6,6 +6,8 @@ pub enum DomainError {
     Validation(String),
     #[error("not found")]
     NotFound,
+    #[error("unauthorized")]
+    Unauthorized,
     #[error("unexpected error: {0}")]
     Unexpected(String),
 }
