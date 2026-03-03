@@ -55,7 +55,7 @@ impl ProductRepository for PostgresProductRepository {
         .await
         .map_err(|e| DomainError::Unexpected(e.to_string()))?;
 
-        Ok(row) 
+        Ok(row)
     }
 
     #[instrument(skip(self), err, fields(db = "postgres"))]

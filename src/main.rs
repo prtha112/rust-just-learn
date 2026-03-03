@@ -6,9 +6,9 @@ mod usecases;
 use std::sync::Arc;
 
 use adapters::restapi::{router, AppState};
-use infra::user_repository::PostgresUserRepository;
-use infra::category_repository::PostgresCategoryRepository;
-use infra::product_repository::PostgresProductRepository;
+use infra::repository::user::PostgresUserRepository;
+use infra::repository::category::PostgresCategoryRepository;
+use infra::repository::product::PostgresProductRepository;
 use usecases::user_service::UserService;
 use usecases::category_service::CategoryService;
 use usecases::product_service::ProductService;
