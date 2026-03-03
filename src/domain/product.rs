@@ -18,4 +18,5 @@ pub trait ProductRepository: Send + Sync {
     async fn create(&self, product: Product) -> Result<i64, DomainError>;
     async fn get_by_product_id(&self, id: i64) -> Result<Option<Product>, DomainError>;
     async fn get_by_category_id(&self, category_id: i64) -> Result<Vec<Product>, DomainError>;
+    async fn get_all_products(&self) -> Result<Vec<Product>, DomainError>;
 }

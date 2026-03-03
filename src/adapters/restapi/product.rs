@@ -77,3 +77,22 @@ pub async fn get_products_by_category(_claims: Claims, State(state): State<AppSt
         Err(e) => super::map_error(e),
     }
 }
+
+pub async fn get_all_products(_claims: Claims, State(state): State<AppState>) -> axum::response::Response {
+    match state.product_service.get_all_products().await {
+        Ok(products) => {
+            tracing::info!(product_count = products.len(), "fetched all products {:#?}", &products[..products.len().min(5)]);
+            let resp: Vec<ProductResp> = products.into_iter().map(|p| ProductResp {
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                price: p.price,
+                stock: p.stock,
+                category_id: p.category_id,
+                active: p.active,
+            }).collect();
+            (StatusCode::OK, Json(resp)).into_response()
+        },
+        Err(e) => super::map_error(e),
+    }
+}
