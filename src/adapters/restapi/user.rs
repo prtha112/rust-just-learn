@@ -9,7 +9,7 @@ use crate::{
     adapters::auth_middleware::ApiKey,
     adapters::dto_user::{CreateUserReq, CreateUserResp, LoginReq, LoginResp, SpeakResp, UpdateUserReq, UserResp},
     domain::user::Speak,
-    infra::jwt::{sign_token, Claims},
+    infra::jwt::Claims,
 };
 
 use super::AppState;
@@ -99,16 +99,12 @@ pub async fn login_user(
     State(state): State<AppState>,
     Json(req): Json<LoginReq>,
 ) -> axum::response::Response {
+    let username = req.username.clone();
     match state.user_service.login(req.username, req.password).await {
-        Ok(u) => {
-            match sign_token(u.id, u.username.clone()) {
-                Ok(token) => {
-                    tracing::info!(user_id = u.id, username = %u.username, "user logged in");
-                    (StatusCode::OK, Json(LoginResp { token })).into_response()
-                }
-                Err(e) => super::map_error(e),
-            }
-        },
+        Ok(token) => {
+            tracing::info!(username = %username, "user logged in");
+            (StatusCode::OK, Json(LoginResp { token })).into_response()
+        }
         Err(e) => super::map_error(e),
     }
 }
