@@ -1,6 +1,12 @@
 use opentelemetry::global;
 use opentelemetry::trace::TracerProvider as _;
-use opentelemetry_otlp::{WithExportConfig, WithTonicConfig};
+use opentelemetry_otlp::{
+    WithExportConfig, 
+    WithTonicConfig,
+    SpanExporter,
+    LogExporter,
+    MetricExporter,
+};
 use opentelemetry_sdk::{
     logs::SdkLoggerProvider,
     metrics::{PeriodicReader, SdkMeterProvider},
@@ -60,7 +66,7 @@ pub fn init_telemetry() -> Result<TelemetryProviders, Box<dyn std::error::Error 
 
     // ---- Tracer ----
     global::set_text_map_propagator(TraceContextPropagator::new());
-    let span_exporter = opentelemetry_otlp::SpanExporter::builder()
+    let span_exporter = SpanExporter::builder()
         .with_tonic()
         .with_endpoint(&endpoint)
         .with_metadata(metadata.clone())
@@ -73,7 +79,7 @@ pub fn init_telemetry() -> Result<TelemetryProviders, Box<dyn std::error::Error 
     global::set_tracer_provider(tracer_provider.clone());
 
     // ---- Logger ----
-    let log_exporter = opentelemetry_otlp::LogExporter::builder()
+    let log_exporter = LogExporter::builder()
         .with_tonic()
         .with_endpoint(&endpoint)
         .with_metadata(metadata.clone())
@@ -84,7 +90,7 @@ pub fn init_telemetry() -> Result<TelemetryProviders, Box<dyn std::error::Error 
         .build();
 
     // ---- Meter ----
-    let metric_exporter = opentelemetry_otlp::MetricExporter::builder()
+    let metric_exporter = MetricExporter::builder()
         .with_tonic()
         .with_endpoint(&endpoint)
         .with_metadata(metadata)
